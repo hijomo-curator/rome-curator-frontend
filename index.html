@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rome Curator — See Rome like a local</title>
+  <meta name="description" content="Not the tour bus version. A curated Rome itinerary built around food, culture, and the streets most visitors never find." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #F7F3EE; --parchment: #EDE6DA; --terracotta: #B85C38;
+      --terra-dark: #8B3E22; --terra-light: #D4845A; --ink: #1C1410;
+      --ink-mid: #4A3728; --ink-light: #7A6355; --gold: #C4922A; --stone: #9E9080;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+    .app-shell { max-width: 780px; margin: 0 auto; padding: 0 0 80px; }
+
+    /* ── HEADER ── */
+    .header { padding: 36px 32px 0; }
+    .brand-lockup { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+    .brand-icon { width: 36px; height: 36px; background: var(--terracotta); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .brand-icon svg { width: 20px; height: 20px; }
+    .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--ink); letter-spacing: 0.2px; }
+    .brand-name span { color: var(--terracotta); }
+    .header-title { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 700; line-height: 1.06; color: var(--ink); margin-bottom: 10px; }
+    .header-title em { font-style: italic; color: var(--terracotta); font-weight: 400; }
+    .header-sub { font-size: 13.5px; color: var(--ink-light); font-weight: 300; line-height: 1.7; max-width: 460px; }
+    .header-rule { height: 1px; background: linear-gradient(to right, var(--terracotta) 0%, transparent 65%); margin: 24px 0 0; }
+
+    /* ── FORM ── */
+    .form-section { padding: 28px 32px 32px; background: white; border-bottom: 1px solid var(--parchment); }
+    .form-section-title { font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--stone); margin-bottom: 18px; }
+    .form-row-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-mid); }
+    select, input[type="number"] { width: 100%; padding: 10px 12px; border: 1px solid var(--parchment); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); background: var(--cream); appearance: none; -webkit-appearance: none; outline: none; transition: border-color 0.2s; }
+    select:focus, input[type="number"]:focus { border-color: var(--terracotta); }
+    .select-wrap { position: relative; }
+    .select-wrap::after { content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--stone); pointer-events: none; }
+    .duration-hint { font-size: 11px; color: var(--terracotta); font-style: italic; margin-top: 4px; min-height: 15px; }
+    .interests-label-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 11px; }
+    .interests-label { font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-mid); }
+    .interests-hint { font-size: 11px; color: var(--stone); font-weight: 300; }
+    .interest-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+    .interest-chip { padding: 10px 6px 8px; border: 1px solid var(--parchment); border-radius: 4px; font-size: 11px; color: var(--ink-mid); background: var(--cream); cursor: pointer; transition: all 0.15s; text-align: center; user-select: none; line-height: 1.3; font-weight: 400; }
+    .interest-chip:hover { border-color: var(--terra-light); color: var(--terracotta); background: #FDF8F5; }
+    .interest-chip.active { background: var(--terracotta); border-color: var(--terracotta); color: white; }
+    .interest-chip.city-chip { border-style: dashed; }
+    .interest-chip.city-chip.active { border-style: solid; }
+    .chip-icon { display: block; font-size: 16px; margin-bottom: 4px; }
+    .city-tag { display: inline-block; font-size: 9px; color: var(--gold); background: rgba(196,146,42,0.12); border-radius: 2px; padding: 1px 4px; margin-top: 3px; }
+    .interest-chip.active .city-tag { color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.15); }
+    .section-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0 11px; }
+    .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--parchment); }
+    .section-divider span { font-size: 10px; color: var(--stone); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; }
+    .btn-generate { width: 100%; padding: 15px; background: var(--terracotta); color: white; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.8px; cursor: pointer; margin-top: 22px; transition: background 0.2s; }
+    .btn-generate:hover { background: var(--terra-dark); }
+    .btn-generate:disabled { background: var(--stone); cursor: not-allowed; }
+
+    /* ── LOADING ── */
+    .loading-state { padding: 64px 32px; text-align: center; display: none; }
+    .loading-brand { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--terracotta); margin-bottom: 16px; }
+    .loading-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--ink); margin-bottom: 8px; }
+    .loading-sub { font-size: 13px; color: var(--ink-light); margin-bottom: 30px; min-height: 20px; }
+    .loading-dots { display: flex; justify-content: center; gap: 8px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--terracotta); animation: pulse 1.3s infinite; }
+    .dot:nth-child(2) { animation-delay: 0.22s; }
+    .dot:nth-child(3) { animation-delay: 0.44s; }
+    @keyframes pulse { 0%,80%,100%{transform:scale(0.55);opacity:0.35}40%{transform:scale(1);opacity:1} }
+
+    /* ── ITINERARY ── */
+    .itinerary-output { display: none; }
+    .itin-header { padding: 26px 32px 22px; background: var(--ink); }
+    .itin-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .itin-brand-icon { width: 26px; height: 26px; background: var(--terracotta); border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+    .itin-brand-icon svg { width: 14px; height: 14px; }
+    .itin-brand-name { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.5); }
+    .itin-brand-name span { color: var(--terra-light); }
+    .itin-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: white; margin-bottom: 4px; line-height: 1.1; }
+    .itin-meta { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 300; }
+    .days-wrap { background: white; }
+    .day-card { border-bottom: 1px solid var(--parchment); }
+    .day-hd { display: flex; align-items: center; gap: 14px; padding: 18px 32px; cursor: pointer; transition: background 0.15s; user-select: none; }
+    .day-hd:hover { background: var(--cream); }
+    .day-num { width: 34px; height: 34px; border-radius: 50%; background: var(--terracotta); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+    .day-info { flex: 1; min-width: 0; }
+    .day-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 500; color: var(--ink); }
+    .day-why { font-size: 12px; color: var(--ink-light); font-weight: 300; margin-top: 2px; font-style: italic; line-height: 1.45; }
+    .day-chev { color: var(--stone); font-size: 14px; transition: transform 0.2s; flex-shrink: 0; }
+    .day-chev.open { transform: rotate(180deg); }
+    .day-bd { display: none; padding: 4px 32px 22px; }
+    .day-bd.open { display: block; }
+    .time-block { margin-bottom: 16px; }
+    .time-label { font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--terracotta); margin-bottom: 9px; display: flex; align-items: center; gap: 8px; }
+    .time-label::after { content: ''; flex: 1; height: 1px; background: var(--parchment); }
+    .act-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .act-item { display: flex; gap: 9px; align-items: flex-start; font-size: 13px; color: var(--ink-mid); line-height: 1.55; }
+    .act-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--terra-light); margin-top: 8px; flex-shrink: 0; }
+    .refine-bar { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--parchment); display: flex; gap: 8px; }
+    .refine-inp { flex: 1; padding: 8px 11px; border: 1px solid var(--parchment); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--ink); background: var(--cream); outline: none; }
+    .refine-inp:focus { border-color: var(--terracotta); }
+    .btn-refine { padding: 8px 14px; background: transparent; border: 1px solid var(--terracotta); color: var(--terracotta); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+    .btn-refine:hover { background: var(--terracotta); color: white; }
+    .btn-refine:disabled { opacity: 0.5; cursor: not-allowed; }
+    .itin-footer { padding: 20px 32px; background: var(--parchment); display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .footer-note { font-size: 12px; color: var(--ink-light); font-style: italic; }
+    .btn-restart { padding: 8px 16px; background: transparent; border: 1px solid var(--ink-mid); color: var(--ink-mid); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn-restart:hover { background: var(--ink); color: white; border-color: var(--ink); }
+    .error-box { padding: 16px 20px; background: #FEF2F2; border: 1px solid #FCA5A5; margin: 20px 32px; border-radius: 4px; font-size: 13px; color: #7F1D1D; display: none; line-height: 1.5; }
+
+    @media (max-width: 600px) {
+      .header { padding: 24px 20px 0; }
+      .header-title { font-size: 36px; }
+      .form-section { padding: 20px; }
+      .form-row-3 { grid-template-columns: 1fr; }
+      .interest-grid { grid-template-columns: repeat(3, 1fr); }
+      .day-hd { padding: 16px 20px; }
+      .day-bd { padding: 4px 20px 18px; }
+      .itin-header { padding: 20px; }
+      .itin-footer { padding: 16px 20px; flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <div class="header">
+    <div class="brand-lockup">
+      <div class="brand-icon">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 2C10 2 4 6 4 11C4 14.31 6.69 17 10 17C13.31 17 16 14.31 16 11C16 6 10 2 10 2Z" fill="white" fill-opacity="0.9"/>
+          <circle cx="10" cy="11" r="2.5" fill="#B85C38"/>
+          <path d="M10 8.5V5" stroke="#B85C38" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="brand-name"><span>Rome</span> Curator</span>
+    </div>
+    <h1 class="header-title" id="hTitle">See <em id="hCity">Rome</em><br>like a local.</h1>
+    <p class="header-sub" id="hSub">Not the tour bus version. A curated Rome itinerary built around food, culture, and the streets most visitors never find.</p>
+    <div class="header-rule"></div>
+  </div>
+
+  <div class="form-section" id="formSection">
+    <p class="form-section-title">Plan your trip</p>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label>Destination</label>
+        <div class="select-wrap">
+          <select id="citySelect" onchange="onCityChange()">
+            <option value="">— choose city —</option>
+            <option value="Rome" selected>Rome, Italy</option>
+            <option value="Florence">Florence, Italy</option>
+            <option value="Lisbon">Lisbon, Portugal</option>
+            <option value="Tokyo">Tokyo, Japan</option>
+            <option value="Mexico City">Mexico City, Mexico</option>
+            <option value="Oaxaca">Oaxaca, Mexico</option>
+            <option value="Istanbul">Istanbul, Turkey</option>
+            <option value="Chiang Mai">Chiang Mai, Thailand</option>
+            <option value="Goa">Goa, India</option>
+            <option value="Mumbai">Mumbai, India</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Duration</label>
+        <input type="number" id="days" min="1" max="14" value="4" oninput="updateDuration()" />
+        <div class="duration-hint" id="durHint">4 days · 3 nights</div>
+      </div>
+      <div class="form-group">
+        <label>Pace</label>
+        <div class="select-wrap">
+          <select id="pace">
+            <option value="relaxed">Relaxed</option>
+            <option value="balanced" selected>Balanced</option>
+            <option value="packed">Packed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="interests-label-row">
+      <span class="interests-label">Your interests</span>
+      <span class="interests-hint">pick all that apply</span>
+    </div>
+    <div class="interest-grid" id="uGrid"></div>
+    <div class="section-divider" id="cityDivider" style="display:none;">
+      <span id="cityDividerLabel">Rome specials</span>
+    </div>
+    <div class="interest-grid" id="cGrid"></div>
+    <button class="btn-generate" onclick="generate()">Curate my itinerary</button>
+  </div>
+
+  <div class="loading-state" id="loadingState">
+    <div class="loading-brand">Rome Curator</div>
+    <p class="loading-title" id="loadingTitle">Your local is thinking…</p>
+    <p class="loading-sub" id="loadingMsg">Finding the places worth your time</p>
+    <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="itinerary-output" id="itinOutput">
+    <div class="itin-header">
+      <div class="itin-brand">
+        <div class="itin-brand-icon">
+          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 2C10 2 4 6 4 11C4 14.31 6.69 17 10 17C13.31 17 16 14.31 16 11C16 6 10 2 10 2Z" fill="white" fill-opacity="0.7"/>
+            <circle cx="10" cy="11" r="2.5" fill="#B85C38"/>
+            <path d="M10 8.5V5" stroke="#B85C38" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="itin-brand-name"><span>Rome</span> Curator</span>
+      </div>
+      <h2 class="itin-title" id="iTitle">Rome, curated.</h2>
+      <p class="itin-meta" id="iMeta"></p>
+    </div>
+    <div class="days-wrap" id="daysWrap"></div>
+    <div class="itin-footer">
+      <p class="footer-note">Take this to your booking provider — flights, stays, transport.</p>
+      <button class="btn-restart" onclick="restart()">Plan another trip</button>
+    </div>
+  </div>
+
+</div>
+<script>
+  // ── IMPORTANT: Replace this with your actual Render backend URL after deploying ──
+  const BACKEND_URL = "https://your-backend.onrender.com";
+
+  const CITY_TAGLINES = {
+    'Rome':        ['See <em>Rome</em><br>like a local.', 'Not the tour bus version. A curated Rome itinerary built around food, culture, and the streets most visitors never find.'],
+    'Florence':    ['See <em>Florence</em><br>like a local.', 'Beyond the Uffizi queues. A curated Florence itinerary built around wine, markets, and the neighbourhoods tourists miss.'],
+    'Lisbon':      ['See <em>Lisbon</em><br>like a local.', 'Past the Tram 28 crowds. A curated Lisbon itinerary built around fado, pastéis, and the hills that matter.'],
+    'Tokyo':       ['See <em>Tokyo</em><br>like a local.', 'Beyond the neon. A curated Tokyo itinerary built around ramen, izakayas, and the quiet side streets worth finding.'],
+    'Mexico City': ['See <em>Mexico City</em><br>like a local.', 'Past the tourist corridor. A curated CDMX itinerary built around tacos, mezcal, and the colonias worth exploring.'],
+    'Oaxaca':      ['See <em>Oaxaca</em><br>like a local.', 'Deeper than the Zócalo. A curated Oaxaca itinerary built around mole, mezcal, and artisan culture.'],
+    'Istanbul':    ['See <em>Istanbul</em><br>like a local.', 'Past the Sultanahmet crowds. A curated Istanbul itinerary built around baklava, hammams, and the neighbourhoods that breathe.'],
+    'Chiang Mai':  ['See <em>Chiang Mai</em><br>like a local.', 'Beyond the elephant camps. A curated Chiang Mai itinerary built around street food, temple trails, and the real north.'],
+    'Goa':         ['See <em>Goa</em><br>like a local.', 'Past the package beach resorts. A curated Goa itinerary built around seafood, spice farms, and the coast most tourists never find.'],
+    'Mumbai':      ['See <em>Mumbai</em><br>like a local.', 'Beyond the Bollywood clichés. A curated Mumbai itinerary built around street food, dabbawala culture, and the city\'s real energy.'],
+  };
+
+  const UNIVERSAL = [
+    { v:'local-food',   label:'Local food',         icon:'🍽️' },
+    { v:'drinks',       label:'Drinks & aperitivo',  icon:'🍷' },
+    { v:'nightlife',    label:'Nightlife',           icon:'🌙' },
+    { v:'markets',      label:'Markets',             icon:'🛒' },
+    { v:'history',      label:'Ancient history',     icon:'🏛️' },
+    { v:'art-museums',  label:'Art & museums',       icon:'🎨' },
+    { v:'nature',       label:'Nature & landscapes', icon:'🌿' },
+    { v:'off-beat',     label:'Off-beat spots',      icon:'🗺️' },
+    { v:'walking',      label:'Walking & city',      icon:'🚶' },
+    { v:'architecture', label:'Architecture',        icon:'🏗️' },
+  ];
+
+  const CITY_SPECIALS = {
+    'Rome':        [{ v:'gelato', label:'Gelato trails', icon:'🍦' }, { v:'coffee', label:'Coffee culture', icon:'☕' }, { v:'roman-ruins', label:'Ruins deep-dive', icon:'🏟️' }],
+    'Florence':    [{ v:'wine', label:'Wine & enoteca', icon:'🍾' }, { v:'renaissance', label:'Renaissance art', icon:'🖼️' }, { v:'artisan', label:'Artisan crafts', icon:'🧶' }],
+    'Lisbon':      [{ v:'fado', label:'Fado & music', icon:'🎵' }, { v:'pasteis', label:'Pastéis & bakeries', icon:'🥐' }, { v:'viewpoints', label:'Viewpoints & trams', icon:'🚃' }],
+    'Tokyo':       [{ v:'ramen', label:'Ramen & izakaya', icon:'🍜' }, { v:'shrines', label:'Temples & shrines', icon:'⛩️' }, { v:'konbini', label:'Konbini culture', icon:'🏪' }],
+    'Mexico City': [{ v:'tacos', label:'Taco & street food', icon:'🌮' }, { v:'mezcal', label:'Mezcal bars', icon:'🥃' }, { v:'murals', label:'Murals & street art', icon:'🖌️' }],
+    'Oaxaca':      [{ v:'mole', label:'Mole & mezcal', icon:'🌶️' }, { v:'crafts', label:'Indigenous crafts', icon:'🧵' }, { v:'zapotec', label:'Zapotec ruins', icon:'🗿' }],
+    'Istanbul':    [{ v:'baklava', label:'Baklava & tea', icon:'🍯' }, { v:'hammam', label:'Hammam & baths', icon:'♨️' }, { v:'bazaar', label:'Grand Bazaar', icon:'🕌' }],
+    'Chiang Mai':  [{ v:'temples', label:'Temple trails', icon:'🛕' }, { v:'night-mkt', label:'Night market food', icon:'🍢' }, { v:'trekking', label:'Jungle trekking', icon:'🌲' }],
+    'Goa':         [{ v:'seafood', label:'Seafood trails', icon:'🦞' }, { v:'spice', label:'Spice farms', icon:'🌶️' }, { v:'beaches', label:'Beach culture', icon:'🏖️' }],
+    'Mumbai':      [{ v:'street-food', label:'Street food trails', icon:'🥘' }, { v:'dabba', label:'Dabbawala culture', icon:'🍱' }, { v:'bollywood', label:'Film & culture', icon:'🎬' }],
+  };
+
+  const LOADING_MSGS = {
+    'Rome':        ['Calling our contact in Testaccio…','Sourcing the best supplì in the city…','Routing you past the tourist menus…'],
+    'Florence':    ['Consulting the enoteca list…','Finding the non-touristy Duomo spots…','Sourcing the local bistecca…'],
+    'Lisbon':      ['Checking the Tram 28 schedule…','Finding the freshest pastéis de nata…'],
+    'Tokyo':       ['Consulting the ramen master…','Mapping the izakaya alleys…'],
+    'Goa':         ['Finding the freshest catch of the day…','Locating the spice farm contacts…'],
+    'Mumbai':      ['Navigating the dabbawala routes…','Finding the best chaat stalls…'],
+    'default':     ['Consulting our local contacts…','Finding the places worth your time…'],
+  };
+
+  let itinerary = null;
+  let msgTimer = null;
+
+  function chip(d, isCity) {
+    return `<div class="interest-chip${isCity?' city-chip':''} active" data-v="${d.v}">
+      <span class="chip-icon">${d.icon}</span>${d.label}${isCity?`<span class="city-tag">local</span>`:''}
+    </div>`;
+  }
+
+  function buildGrids() {
+    const uG = document.getElementById('uGrid');
+    uG.innerHTML = UNIVERSAL.map(d => chip(d, false)).join('');
+    uG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
+    refreshCityGrid();
+  }
+
+  function refreshCityGrid() {
+    const city = document.getElementById('citySelect').value;
+    const specials = CITY_SPECIALS[city] || [];
+    const cG = document.getElementById('cGrid');
+    const div = document.getElementById('cityDivider');
+    document.getElementById('cityDividerLabel').textContent = city ? `${city} specials` : 'City specials';
+    if (specials.length) {
+      div.style.display = 'flex';
+      cG.innerHTML = specials.map(d => chip(d, true)).join('');
+      cG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
+    } else {
+      div.style.display = 'none';
+      cG.innerHTML = '';
+    }
+  }
+
+  function onCityChange() {
+    const city = document.getElementById('citySelect').value;
+    const tl = city && CITY_TAGLINES[city] ? CITY_TAGLINES[city] : ['See <em>the world</em><br>like a local.', 'Not the tour bus version. A curated itinerary built around food, culture, and the streets most visitors never find.'];
+    document.getElementById('hTitle').innerHTML = tl[0];
+    document.getElementById('hSub').textContent = tl[1];
+    refreshCityGrid();
+  }
+
+  function updateDuration() {
+    const d = parseInt(document.getElementById('days').value) || 1;
+    const n = Math.max(0, d - 1);
+    document.getElementById('durHint').textContent = `${d} day${d!==1?'s':''} · ${n} night${n!==1?'s':''}`;
+  }
+
+  function selectedInterests() {
+    return [...document.querySelectorAll('#uGrid .interest-chip.active, #cGrid .interest-chip.active')].map(c => c.dataset.v);
+  }
+
+  async function generate() {
+    const city = document.getElementById('citySelect').value;
+    if (!city) { alert('Please select a destination.'); return; }
+    const days = parseInt(document.getElementById('days').value) || 4;
+    const pace = document.getElementById('pace').value;
+    const interests = selectedInterests();
+    if (!interests.length) { alert('Please select at least one interest.'); return; }
+
+    document.getElementById('formSection').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('itinOutput').style.display = 'none';
+    document.getElementById('loadingTitle').textContent = `Your ${city} local is thinking…`;
+
+    const msgs = LOADING_MSGS[city] || LOADING_MSGS['default'];
+    let mi = 0;
+    document.getElementById('loadingMsg').textContent = msgs[0];
+    msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/generate-itinerary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city, days, pace, interests }),
+      });
+      clearInterval(msgTimer);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Server error');
+      itinerary = data;
+      renderOutput(itinerary, city, days, pace);
+    } catch (err) {
+      clearInterval(msgTimer);
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('formSection').style.display = 'block';
+      const eb = document.getElementById('errorBox');
+      eb.style.display = 'block';
+      eb.textContent = 'Something went wrong: ' + err.message + '. Make sure the backend is running.';
+    }
+  }
+
+  function renderOutput(data, city, days, pace) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('iTitle').textContent = data.title || `${city}, curated.`;
+    document.getElementById('iMeta').textContent = data.meta || `${days} days · ${pace} pace`;
+    const wrap = document.getElementById('daysWrap');
+    wrap.innerHTML = '';
+    (data.days || []).forEach((day, i) => {
+      const card = document.createElement('div');
+      card.className = 'day-card';
+      const slots = [['Morning',day.morning],['Afternoon',day.afternoon],['Evening',day.evening]];
+      const sHTML = slots.map(([lbl,items]) => `
+        <div class="time-block">
+          <div class="time-label">${lbl}</div>
+          <ul class="act-list">${(items||[]).map(it=>`<li class="act-item"><span class="act-dot"></span><span>${it}</span></li>`).join('')}</ul>
+        </div>`).join('');
+      card.innerHTML = `
+        <div class="day-hd" onclick="toggleDay(${i})">
+          <div class="day-num">${day.day}</div>
+          <div class="day-info">
+            <div class="day-title">${day.title}</div>
+            <div class="day-why">${day.why}</div>
+          </div>
+          <div class="day-chev" id="chev${i}">▾</div>
+        </div>
+        <div class="day-bd" id="bd${i}">
+          ${sHTML}
+          <div class="refine-bar">
+            <input class="refine-inp" type="text" placeholder="Refine this day… e.g. 'skip museums, more food'" id="ri${i}" />
+            <button class="btn-refine" onclick="refine(${i},${day.day})">Refine ↻</button>
+          </div>
+        </div>`;
+      wrap.appendChild(card);
+    });
+    toggleDay(0);
+    document.getElementById('itinOutput').style.display = 'block';
+  }
+
+  function toggleDay(i) {
+    const bd = document.getElementById('bd'+i), ch = document.getElementById('chev'+i);
+    if (!bd) return;
+    const open = bd.classList.contains('open');
+    bd.classList.toggle('open', !open); ch.classList.toggle('open', !open);
+  }
+
+  async function refine(idx, dayNum) {
+    const inp = document.getElementById('ri'+idx);
+    const instruction = inp.value.trim();
+    if (!instruction || !itinerary) return;
+    const btn = inp.nextElementSibling;
+    btn.disabled = true; btn.textContent = '…';
+    const city = document.getElementById('citySelect').value;
+    const targetDay = itinerary.days.find(d => d.day === dayNum);
+    try {
+      const res = await fetch(`${BACKEND_URL}/refine-day`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city, day: targetDay, instruction }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Refinement failed');
+      itinerary.days = itinerary.days.map(d => d.day === dayNum ? data : d);
+      renderOutput(itinerary, city);
+      setTimeout(() => { const bd=document.getElementById('bd'+idx),ch=document.getElementById('chev'+idx); if(bd&&!bd.classList.contains('open')){bd.classList.add('open');ch.classList.add('open');} }, 30);
+    } catch(e) {
+      alert('Refinement failed: ' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Refine ↻'; inp.value = '';
+    }
+  }
+
+  function restart() {
+    itinerary = null;
+    document.getElementById('formSection').style.display = 'block';
+    document.getElementById('itinOutput').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
+  }
+
+  buildGrids(); onCityChange(); updateDuration();
+</script>
+</body>
+</html>
