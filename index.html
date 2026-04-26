@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rome Curator — See Rome like a local</title>
-  <meta name="description" content="Not the tour bus version. A curated Rome itinerary built around food, culture, and the streets most visitors never find." />
+  <title>Rome Curator — See the world like a local</title>
+  <meta name="description" content="Not the tour bus version. A curated travel itinerary built around food, culture, and the streets most visitors never find." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -14,33 +14,44 @@
       --cream: #F7F3EE; --parchment: #EDE6DA; --terracotta: #B85C38;
       --terra-dark: #8B3E22; --terra-light: #D4845A; --ink: #1C1410;
       --ink-mid: #4A3728; --ink-light: #7A6355; --gold: #C4922A; --stone: #9E9080;
+      --olive: #5C6B3A;
     }
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
     .app-shell { max-width: 780px; margin: 0 auto; padding: 0 0 80px; }
 
-    /* ── HEADER ── */
+    /* HEADER */
     .header { padding: 36px 32px 0; }
     .brand-lockup { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
     .brand-icon { width: 36px; height: 36px; background: var(--terracotta); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .brand-icon svg { width: 20px; height: 20px; }
-    .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--ink); letter-spacing: 0.2px; }
+    .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--ink); }
     .brand-name span { color: var(--terracotta); }
     .header-title { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 700; line-height: 1.06; color: var(--ink); margin-bottom: 10px; }
     .header-title em { font-style: italic; color: var(--terracotta); font-weight: 400; }
     .header-sub { font-size: 13.5px; color: var(--ink-light); font-weight: 300; line-height: 1.7; max-width: 460px; }
     .header-rule { height: 1px; background: linear-gradient(to right, var(--terracotta) 0%, transparent 65%); margin: 24px 0 0; }
 
-    /* ── FORM ── */
+    /* FORM */
     .form-section { padding: 28px 32px 32px; background: white; border-bottom: 1px solid var(--parchment); }
     .form-section-title { font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--stone); margin-bottom: 18px; }
-    .form-row-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .form-row-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .form-row-3-equal { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
     label { font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-mid); }
-    select, input[type="number"] { width: 100%; padding: 10px 12px; border: 1px solid var(--parchment); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); background: var(--cream); appearance: none; -webkit-appearance: none; outline: none; transition: border-color 0.2s; }
-    select:focus, input[type="number"]:focus { border-color: var(--terracotta); }
+    .required-star { color: var(--terracotta); }
+    select, input[type="number"], input[type="text"], input[type="email"] {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--parchment); border-radius: 4px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); background: var(--cream);
+      appearance: none; -webkit-appearance: none; outline: none; transition: border-color 0.2s;
+    }
+    select:focus, input:focus { border-color: var(--terracotta); }
     .select-wrap { position: relative; }
     .select-wrap::after { content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--stone); pointer-events: none; }
     .duration-hint { font-size: 11px; color: var(--terracotta); font-style: italic; margin-top: 4px; min-height: 15px; }
+    .field-hint { font-size: 11px; color: var(--stone); font-style: italic; margin-top: 4px; min-height: 15px; line-height: 1.4; }
+
+    /* INTERESTS */
     .interests-label-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 11px; }
     .interests-label { font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-mid); }
     .interests-hint { font-size: 11px; color: var(--stone); font-weight: 300; }
@@ -56,22 +67,42 @@
     .section-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0 11px; }
     .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--parchment); }
     .section-divider span { font-size: 10px; color: var(--stone); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; }
+
+    /* SAFETY NOTE */
+    .safety-note { background: #FFF8F0; border: 1px solid #F0D5B8; border-radius: 4px; padding: 10px 14px; margin-top: 10px; font-size: 11px; color: var(--ink-mid); line-height: 1.6; display: none; }
+    .safety-note strong { color: var(--terracotta); }
+
+    /* EMAIL CAPTURE */
+    .email-capture-box { background: var(--parchment); border-radius: 6px; padding: 18px; margin-top: 24px; }
+    .email-capture-title { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+    .email-capture-sub { font-size: 11px; color: var(--ink-light); margin-bottom: 14px; line-height: 1.5; }
+    .email-input-sm { width: 100%; padding: 9px 11px; border: 1px solid #D4C9B8; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--ink); background: white; outline: none; transition: border-color 0.2s; appearance: none; -webkit-appearance: none; }
+    .email-input-sm:focus { border-color: var(--terracotta); }
+    .email-privacy { font-size: 10px; color: var(--stone); margin-top: 8px; }
+    .email-success { font-size: 12px; color: var(--olive); margin-top: 8px; display: none; font-weight: 500; }
+
+    /* BUTTON */
     .btn-generate { width: 100%; padding: 15px; background: var(--terracotta); color: white; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.8px; cursor: pointer; margin-top: 22px; transition: background 0.2s; }
     .btn-generate:hover { background: var(--terra-dark); }
     .btn-generate:disabled { background: var(--stone); cursor: not-allowed; }
 
-    /* ── LOADING ── */
+    /* LOADING */
     .loading-state { padding: 64px 32px; text-align: center; display: none; }
     .loading-brand { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--terracotta); margin-bottom: 16px; }
     .loading-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--ink); margin-bottom: 8px; }
-    .loading-sub { font-size: 13px; color: var(--ink-light); margin-bottom: 30px; min-height: 20px; }
+    .loading-sub { font-size: 13px; color: var(--ink-light); margin-bottom: 6px; min-height: 20px; }
+    .loading-time { font-size: 11px; color: var(--stone); margin-bottom: 24px; font-style: italic; }
     .loading-dots { display: flex; justify-content: center; gap: 8px; }
     .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--terracotta); animation: pulse 1.3s infinite; }
     .dot:nth-child(2) { animation-delay: 0.22s; }
     .dot:nth-child(3) { animation-delay: 0.44s; }
     @keyframes pulse { 0%,80%,100%{transform:scale(0.55);opacity:0.35}40%{transform:scale(1);opacity:1} }
 
-    /* ── ITINERARY ── */
+    /* ERROR */
+    .error-box { padding: 16px 20px; background: #FEF2F2; border: 1px solid #FCA5A5; margin: 20px 32px; border-radius: 4px; font-size: 13px; color: #7F1D1D; display: none; line-height: 1.6; }
+    .retry-btn { display: inline-block; margin-top: 10px; padding: 8px 16px; background: var(--terracotta); color: white; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; }
+
+    /* ITINERARY */
     .itinerary-output { display: none; }
     .itin-header { padding: 26px 32px 22px; background: var(--ink); }
     .itin-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
@@ -81,6 +112,18 @@
     .itin-brand-name span { color: var(--terra-light); }
     .itin-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: white; margin-bottom: 4px; line-height: 1.1; }
     .itin-meta { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 300; }
+    .itin-weather { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 6px; font-style: italic; }
+
+    /* EMAIL POST ITINERARY */
+    .email-post-section { background: var(--parchment); padding: 24px 32px; border-bottom: 1px solid #D4C9B8; }
+    .email-post-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+    .email-post-sub { font-size: 12px; color: var(--ink-light); margin-bottom: 14px; }
+    .email-post-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .btn-save { padding: 10px 20px; background: var(--terracotta); color: white; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.2s; width: 100%; margin-top: 4px; }
+    .btn-save:hover { background: var(--terra-dark); }
+    .btn-save:disabled { background: var(--stone); cursor: not-allowed; }
+
+    /* DAYS */
     .days-wrap { background: white; }
     .day-card { border-bottom: 1px solid var(--parchment); }
     .day-hd { display: flex; align-items: center; gap: 14px; padding: 18px 32px; cursor: pointer; transition: background 0.15s; user-select: none; }
@@ -105,28 +148,41 @@
     .btn-refine { padding: 8px 14px; background: transparent; border: 1px solid var(--terracotta); color: var(--terracotta); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
     .btn-refine:hover { background: var(--terracotta); color: white; }
     .btn-refine:disabled { opacity: 0.5; cursor: not-allowed; }
-    .itin-footer { padding: 20px 32px; background: var(--parchment); display: flex; justify-content: space-between; align-items: center; gap: 16px; }
-    .footer-note { font-size: 12px; color: var(--ink-light); font-style: italic; }
-    .btn-restart { padding: 8px 16px; background: transparent; border: 1px solid var(--ink-mid); color: var(--ink-mid); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-    .btn-restart:hover { background: var(--ink); color: white; border-color: var(--ink); }
-    .error-box { padding: 16px 20px; background: #FEF2F2; border: 1px solid #FCA5A5; margin: 20px 32px; border-radius: 4px; font-size: 13px; color: #7F1D1D; display: none; line-height: 1.5; }
 
+    /* FOOTER */
+    .itin-footer { padding: 20px 32px; background: var(--parchment); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .footer-note { font-size: 12px; color: var(--ink-light); font-style: italic; }
+    .btn-restart { padding: 11px 22px; background: var(--terracotta); color: white; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+    .btn-restart:hover { background: var(--terra-dark); }
+
+    /* DISCLAIMER */
+    .disclaimer { padding: 16px 32px 24px; background: #F5F5F5; }
+    .disclaimer p { font-size: 10.5px; color: var(--stone); line-height: 1.7; }
+    .disclaimer strong { color: var(--ink-light); }
+
+    /* MOBILE */
     @media (max-width: 600px) {
-      .header { padding: 24px 20px 0; }
-      .header-title { font-size: 36px; }
-      .form-section { padding: 20px; }
-      .form-row-3 { grid-template-columns: 1fr; }
+      .header { padding: 24px 16px 0; }
+      .header-title { font-size: 34px; }
+      .form-section { padding: 20px 16px; }
+      .form-row-3, .form-row-3-equal, .form-row-2 { grid-template-columns: 1fr; }
       .interest-grid { grid-template-columns: repeat(3, 1fr); }
-      .day-hd { padding: 16px 20px; }
-      .day-bd { padding: 4px 20px 18px; }
-      .itin-header { padding: 20px; }
-      .itin-footer { padding: 16px 20px; flex-direction: column; align-items: flex-start; gap: 12px; }
+      .day-hd { padding: 14px 16px; }
+      .day-bd { padding: 4px 16px 16px; }
+      .itin-header { padding: 20px 16px; }
+      .email-post-section { padding: 20px 16px; }
+      .email-post-grid { grid-template-columns: 1fr; }
+      .itin-footer { padding: 16px; flex-direction: column; align-items: stretch; }
+      .btn-restart { text-align: center; }
+      .disclaimer { padding: 16px; }
+      .error-box { margin: 16px; }
     }
   </style>
 </head>
 <body>
 <div class="app-shell">
 
+  <!-- HEADER -->
   <div class="header">
     <div class="brand-lockup">
       <div class="brand-icon">
@@ -143,8 +199,11 @@
     <div class="header-rule"></div>
   </div>
 
+  <!-- FORM -->
   <div class="form-section" id="formSection">
     <p class="form-section-title">Plan your trip</p>
+
+    <!-- Row 1: Destination, Duration, Pace -->
     <div class="form-row-3">
       <div class="form-group">
         <label>Destination</label>
@@ -180,27 +239,124 @@
         </div>
       </div>
     </div>
-    <div class="interests-label-row">
-      <span class="interests-label">Your interests</span>
-      <span class="interests-hint">pick all that apply</span>
+
+    <!-- Row 2: Month, Travel Style, Budget -->
+    <div class="form-row-3-equal">
+      <div class="form-group">
+        <label>Travel month <span class="required-star">*</span></label>
+        <div class="select-wrap">
+          <select id="travelMonth" onchange="updateWeatherHint()">
+            <option value="">— select —</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
+        <div class="field-hint" id="weatherHint"></div>
+      </div>
+      <div class="form-group">
+        <label>Who's travelling <span class="required-star">*</span></label>
+        <div class="select-wrap">
+          <select id="travelStyle" onchange="onTravelStyleChange()">
+            <option value="">— select —</option>
+            <option value="solo_male">Solo (male)</option>
+            <option value="solo_female">Solo (female)</option>
+            <option value="couple">Couple</option>
+            <option value="friends">Group of friends</option>
+            <option value="family_kids">Family with kids</option>
+            <option value="family_elderly">Family with elderly</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Budget <span class="required-star">*</span></label>
+        <div class="select-wrap">
+          <select id="budget">
+            <option value="">— select —</option>
+            <option value="backpacker">Backpacker</option>
+            <option value="mid-range">Mid-range</option>
+            <option value="luxury">Luxury</option>
+          </select>
+        </div>
+      </div>
     </div>
-    <div class="interest-grid" id="uGrid"></div>
-    <div class="section-divider" id="cityDivider" style="display:none;">
-      <span id="cityDividerLabel">Rome specials</span>
+
+    <!-- Solo female safety note -->
+    <div class="safety-note" id="safetyNote">
+      <strong>Safety first:</strong> We'll tailor recommendations with solo female travellers in mind — well-connected areas, busy streets, trusted venues. Off-beat suggestions will include safety context. Always trust your instincts and research local conditions before you travel.
     </div>
-    <div class="interest-grid" id="cGrid"></div>
+
+    <!-- Interests -->
+    <div style="margin-top:20px;">
+      <div class="interests-label-row">
+        <span class="interests-label">Your interests</span>
+        <span class="interests-hint">pick all that apply</span>
+      </div>
+      <div class="interest-grid" id="uGrid"></div>
+      <div class="section-divider" id="cityDivider" style="display:none;">
+        <span id="cityDividerLabel">Rome specials</span>
+      </div>
+      <div class="interest-grid" id="cGrid"></div>
+    </div>
+
+    <!-- Email capture - landing -->
+    <div class="email-capture-box">
+      <div class="email-capture-title">Get your itinerary in your inbox</div>
+      <div class="email-capture-sub">We'll save your curated itinerary and send updates. No spam — ever.</div>
+      <div class="form-row-2">
+        <input class="email-input-sm" type="text" id="landingFirstName" placeholder="First name *" />
+        <input class="email-input-sm" type="text" id="landingLastName" placeholder="Last name" />
+      </div>
+      <div class="form-row-2">
+        <input class="email-input-sm" type="email" id="landingEmail" placeholder="Email address *" />
+        <div class="select-wrap">
+          <select id="landingCountry" class="email-input-sm" style="background:white;border:1px solid #D4C9B8;">
+            <option value="">Country *</option>
+            <option value="India">India</option>
+            <option value="United States">United States</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="Australia">Australia</option>
+            <option value="Canada">Canada</option>
+            <option value="Germany">Germany</option>
+            <option value="France">France</option>
+            <option value="Italy">Italy</option>
+            <option value="Singapore">Singapore</option>
+            <option value="UAE">UAE</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="email-privacy">🔒 Your details are safe. We never share or sell your data.</div>
+    </div>
+
     <button class="btn-generate" onclick="generate()">Curate my itinerary</button>
   </div>
 
+  <!-- LOADING -->
   <div class="loading-state" id="loadingState">
     <div class="loading-brand">Rome Curator</div>
     <p class="loading-title" id="loadingTitle">Your local is thinking…</p>
     <p class="loading-sub" id="loadingMsg">Finding the places worth your time</p>
+    <p class="loading-time">Usually takes 20–40 seconds. Good things take time.</p>
     <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
   </div>
 
-  <div class="error-box" id="errorBox"></div>
+  <!-- ERROR -->
+  <div class="error-box" id="errorBox">
+    <div id="errorMsg"></div>
+    <button class="retry-btn" onclick="retryGenerate()">Try again →</button>
+  </div>
 
+  <!-- ITINERARY OUTPUT -->
   <div class="itinerary-output" id="itinOutput">
     <div class="itin-header">
       <div class="itin-brand">
@@ -215,17 +371,54 @@
       </div>
       <h2 class="itin-title" id="iTitle">Rome, curated.</h2>
       <p class="itin-meta" id="iMeta"></p>
+      <p class="itin-weather" id="iWeather"></p>
     </div>
+
+    <!-- Email capture - post itinerary -->
+    <div class="email-post-section" id="emailPostSection">
+      <div class="email-post-title">📩 Save your itinerary</div>
+      <div class="email-post-sub">Enter your details and we'll send this itinerary to your inbox.</div>
+      <div class="email-post-grid">
+        <input class="email-input-sm" type="text" id="postFirstName" placeholder="First name *" />
+        <input class="email-input-sm" type="text" id="postLastName" placeholder="Last name" />
+        <input class="email-input-sm" type="email" id="postEmail" placeholder="Email address *" />
+        <div class="select-wrap">
+          <select id="postCountry" class="email-input-sm" style="background:white;border:1px solid #D4C9B8;">
+            <option value="">Country *</option>
+            <option value="India">India</option>
+            <option value="United States">United States</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="Australia">Australia</option>
+            <option value="Canada">Canada</option>
+            <option value="Germany">Germany</option>
+            <option value="France">France</option>
+            <option value="Italy">Italy</option>
+            <option value="Singapore">Singapore</option>
+            <option value="UAE">UAE</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-save" id="btnSavePost" onclick="savePostEmail()">Save my itinerary ✓</button>
+      <div class="email-success" id="postSuccess">✅ Saved! We'll be in touch soon.</div>
+      <div class="email-privacy">🔒 No spam. Ever.</div>
+    </div>
+
     <div class="days-wrap" id="daysWrap"></div>
+
     <div class="itin-footer">
       <p class="footer-note">Take this to your booking provider — flights, stays, transport.</p>
-      <button class="btn-restart" onclick="restart()">Plan another trip</button>
+      <button class="btn-restart" onclick="restart()">← Plan another trip</button>
+    </div>
+
+    <div class="disclaimer">
+      <p><strong>Important notice:</strong> Rome Curator itineraries are AI-generated recommendations only and are intended as a planning guide. Always verify information, opening hours, and prices before visiting. Consult a licensed travel advisor before making bookings. Take appropriate safety precautions and research local conditions, laws, and travel advisories for your destination. Rome Curator is not liable for any outcomes, losses, or mishaps arising from the use of these recommendations. Travel at your own discretion.</p>
     </div>
   </div>
 
 </div>
 <script>
-  // ── IMPORTANT: Replace this with your actual Render backend URL after deploying ──
+  // ── The only URL in this file. No API keys, no secrets. ──
   const BACKEND_URL = "https://rome-curator-backend.onrender.com";
 
   const CITY_TAGLINES = {
@@ -240,6 +433,15 @@
     'Goa':         ['See <em>Goa</em><br>like a local.', 'Past the package beach resorts. A curated Goa itinerary built around seafood, spice farms, and the coast most tourists never find.'],
     'Mumbai':      ['See <em>Mumbai</em><br>like a local.', 'Beyond the Bollywood clichés. A curated Mumbai itinerary built around street food, dabbawala culture, and the city\'s real energy.'],
   };
+
+  const CITY_WEATHER = {
+    'Rome': ['cold & quiet (avg 8°C) — great for museums, few crowds','crisp & romantic (avg 10°C) — early spring blooms','mild & beautiful (avg 13°C) — perfect sightseeing weather','warm & lovely (avg 17°C) — peak spring, busy but gorgeous','warm & sunny (avg 22°C) — ideal, book ahead','hot & very busy (avg 27°C) — peak tourist season','very hot & crowded (avg 30°C) — locals flee to the coast','hot, locals on holiday (avg 29°C) — some closures','warm & golden (avg 25°C) — best month to visit Rome','mild & atmospheric (avg 19°C) — autumn colours, quieter','cool & rainy (avg 13°C) — good for indoor culture','cold & festive (avg 9°C) — Christmas markets, few tourists'],
+    'Goa': ['peak season (avg 28°C) — dry, sunny, ideal','peak season (avg 29°C) — beautiful weather, busy','hot & dry (avg 31°C) — shoulder season starting','very hot (avg 33°C) — pre-monsoon, fewer tourists','very hot (avg 34°C) — avoid if possible','monsoon begins (avg 30°C) — lush, many closures','heavy monsoon (avg 29°C) — dramatic but many places shut','monsoon (avg 29°C) — very quiet, good deals','monsoon ending (avg 29°C) — slowly reopening','post-monsoon (avg 30°C) — good shoulder season','early peak season (avg 29°C) — great weather returning','peak season (avg 28°C) — Christmas rush, book early'],
+    'Tokyo': ['cold & clear (avg 6°C) — New Year quiet, great for museums','cold, plum blossoms (avg 7°C) — fewer tourists','cool, early cherry blossom (avg 10°C) — crowds building','cherry blossom peak (avg 15°C) — stunning but very busy','mild & green (avg 19°C) — one of the best months','rainy season (avg 23°C) — hydrangeas bloom','hot & humid (avg 27°C) — summer festivals','hot & humid (avg 29°C) — peak summer, fireworks','cooler, autumnal (avg 25°C) — excellent weather','autumn colours (avg 19°C) — beautiful, busy','autumn peak (avg 13°C) — stunning foliage','cold & festive (avg 9°C) — illuminations, year-end'],
+    'default': ['winter — check local conditions','late winter — shoulder season','early spring — warming up','spring — good travel weather','late spring — excellent conditions','early summer — warm and active','peak summer — hot and busy','late summer — still warm','early autumn — pleasant temperatures','autumn — beautiful season','late autumn — cooling down','winter — festive atmosphere'],
+  };
+
+  const MONTH_NAMES = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
 
   const UNIVERSAL = [
     { v:'local-food',   label:'Local food',         icon:'🍽️' },
@@ -268,27 +470,29 @@
   };
 
   const LOADING_MSGS = {
-    'Rome':        ['Calling our contact in Testaccio…','Sourcing the best supplì in the city…','Routing you past the tourist menus…'],
+    'Rome':        ['Calling our contact in Testaccio…','Sourcing the best supplì in the city…','Routing you past the tourist menus…','Checking the Porta Portese schedule…'],
     'Florence':    ['Consulting the enoteca list…','Finding the non-touristy Duomo spots…','Sourcing the local bistecca…'],
     'Lisbon':      ['Checking the Tram 28 schedule…','Finding the freshest pastéis de nata…'],
     'Tokyo':       ['Consulting the ramen master…','Mapping the izakaya alleys…'],
     'Goa':         ['Finding the freshest catch of the day…','Locating the spice farm contacts…'],
     'Mumbai':      ['Navigating the dabbawala routes…','Finding the best chaat stalls…'],
-    'default':     ['Consulting our local contacts…','Finding the places worth your time…'],
+    'default':     ['Consulting our local contacts…','Finding the places worth your time…','Curating your experience…'],
   };
 
   let itinerary = null;
   let msgTimer = null;
+  let lastParams = null;
 
-  function chip(d, isCity, selected = true) {
-    return `<div class="interest-chip${isCity?' city-chip':''}${selected?' active':''}" data-v="${d.v}">
+  // ── Interest grids ────────────────────────────────────────────
+  function chip(d, isCity) {
+    return `<div class="interest-chip${isCity?' city-chip':''}" data-v="${d.v}">
       <span class="chip-icon">${d.icon}</span>${d.label}${isCity?`<span class="city-tag">local</span>`:''}
     </div>`;
   }
 
   function buildGrids() {
     const uG = document.getElementById('uGrid');
-    uG.innerHTML = UNIVERSAL.map(d => chip(d, false, false)).join('');
+    uG.innerHTML = UNIVERSAL.map(d => chip(d, false)).join('');
     uG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
     refreshCityGrid();
   }
@@ -301,7 +505,7 @@
     document.getElementById('cityDividerLabel').textContent = city ? `${city} specials` : 'City specials';
     if (specials.length) {
       div.style.display = 'flex';
-      cG.innerHTML = specials.map(d => chip(d, true, false)).join('');
+      cG.innerHTML = specials.map(d => chip(d, true)).join('');
       cG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
     } else {
       div.style.display = 'none';
@@ -315,6 +519,24 @@
     document.getElementById('hTitle').innerHTML = tl[0];
     document.getElementById('hSub').textContent = tl[1];
     refreshCityGrid();
+    updateWeatherHint();
+  }
+
+  function updateWeatherHint() {
+    const city = document.getElementById('citySelect').value;
+    const month = parseInt(document.getElementById('travelMonth').value);
+    const hint = document.getElementById('weatherHint');
+    if (city && month) {
+      const data = CITY_WEATHER[city] || CITY_WEATHER['default'];
+      hint.textContent = `${MONTH_NAMES[month]}: ${data[month-1].split('—')[0].trim()}`;
+    } else {
+      hint.textContent = '';
+    }
+  }
+
+  function onTravelStyleChange() {
+    const style = document.getElementById('travelStyle').value;
+    document.getElementById('safetyNote').style.display = style === 'solo_female' ? 'block' : 'none';
   }
 
   function updateDuration() {
@@ -327,13 +549,48 @@
     return [...document.querySelectorAll('#uGrid .interest-chip.active, #cGrid .interest-chip.active')].map(c => c.dataset.v);
   }
 
+  // ── Email save (calls backend — no Sheetdb URL in frontend) ──
+  async function saveEmail(firstName, lastName, email, country, source) {
+    try {
+      await fetch(`${BACKEND_URL}/save-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName, lastName, email, country, source }),
+      });
+    } catch(e) {
+      console.error('Email save failed:', e);
+    }
+  }
+
+  // ── Generate ──────────────────────────────────────────────────
   async function generate() {
     const city = document.getElementById('citySelect').value;
     if (!city) { alert('Please select a destination.'); return; }
     const days = parseInt(document.getElementById('days').value) || 4;
     const pace = document.getElementById('pace').value;
+    const month = parseInt(document.getElementById('travelMonth').value);
+    const travelStyle = document.getElementById('travelStyle').value;
+    const budget = document.getElementById('budget').value;
     const interests = selectedInterests();
+
+    if (!month) { alert('Please select your travel month.'); return; }
+    if (!travelStyle) { alert('Please select who is travelling.'); return; }
+    if (!budget) { alert('Please select your budget.'); return; }
     if (!interests.length) { alert('Please select at least one interest.'); return; }
+
+    const firstName = document.getElementById('landingFirstName').value.trim();
+    const lastName = document.getElementById('landingLastName').value.trim();
+    const email = document.getElementById('landingEmail').value.trim();
+    const country = document.getElementById('landingCountry').value;
+
+    if (!firstName) { alert('Please enter your first name.'); return; }
+    if (!email || !email.includes('@')) { alert('Please enter a valid email address.'); return; }
+    if (!country) { alert('Please select your country.'); return; }
+
+    // Fire-and-forget email save — doesn't block itinerary generation
+    saveEmail(firstName, lastName, email, country, 'landing_form');
+
+    lastParams = { city, days, pace, month, travelStyle, budget, interests };
 
     document.getElementById('formSection').style.display = 'none';
     document.getElementById('loadingState').style.display = 'block';
@@ -346,31 +603,53 @@
     document.getElementById('loadingMsg').textContent = msgs[0];
     msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
 
+    await callGenerate(city, days, pace, month, travelStyle, budget, interests);
+  }
+
+  async function callGenerate(city, days, pace, month, travelStyle, budget, interests) {
     try {
       const res = await fetch(`${BACKEND_URL}/generate-itinerary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city, days, pace, interests }),
+        body: JSON.stringify({ city, days, pace, month, travelStyle, budget, interests }),
       });
       clearInterval(msgTimer);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Server error');
       itinerary = data;
-      renderOutput(itinerary, city, days, pace);
+      const month2 = lastParams?.month;
+      renderOutput(itinerary, city, days, pace, month2);
     } catch (err) {
       clearInterval(msgTimer);
       document.getElementById('loadingState').style.display = 'none';
-      document.getElementById('formSection').style.display = 'block';
       const eb = document.getElementById('errorBox');
       eb.style.display = 'block';
-      eb.textContent = 'Something went wrong: ' + err.message + '. Make sure the backend is running.';
+      document.getElementById('errorMsg').textContent = `Something went wrong: ${err.message}. Please try again.`;
     }
   }
 
-  function renderOutput(data, city, days, pace) {
+  async function retryGenerate() {
+    if (!lastParams) { restart(); return; }
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('loadingTitle').textContent = 'Trying again…';
+    const { city, days, pace, month, travelStyle, budget, interests } = lastParams;
+    const msgs = LOADING_MSGS[city] || LOADING_MSGS['default'];
+    let mi = 0;
+    document.getElementById('loadingMsg').textContent = msgs[0];
+    msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
+    await callGenerate(city, days, pace, month, travelStyle, budget, interests);
+  }
+
+  function renderOutput(data, city, days, pace, month) {
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('iTitle').textContent = data.title || `${city}, curated.`;
     document.getElementById('iMeta').textContent = data.meta || `${days} days · ${pace} pace`;
+    if (month && city) {
+      const weatherData = CITY_WEATHER[city] || CITY_WEATHER['default'];
+      document.getElementById('iWeather').textContent = `🌡 ${MONTH_NAMES[month]} in ${city}: ${weatherData[month-1]}`;
+    }
+
     const wrap = document.getElementById('daysWrap');
     wrap.innerHTML = '';
     (data.days || []).forEach((day, i) => {
@@ -400,8 +679,10 @@
         </div>`;
       wrap.appendChild(card);
     });
+
     toggleDay(0);
     document.getElementById('itinOutput').style.display = 'block';
+    document.getElementById('itinOutput').scrollIntoView({ behavior: 'smooth' });
   }
 
   function toggleDay(i) {
@@ -428,8 +709,11 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Refinement failed');
       itinerary.days = itinerary.days.map(d => d.day === dayNum ? data : d);
-      renderOutput(itinerary, city);
-      setTimeout(() => { const bd=document.getElementById('bd'+idx),ch=document.getElementById('chev'+idx); if(bd&&!bd.classList.contains('open')){bd.classList.add('open');ch.classList.add('open');} }, 30);
+      renderOutput(itinerary, city, null, null, lastParams?.month);
+      setTimeout(() => {
+        const bd=document.getElementById('bd'+idx), ch=document.getElementById('chev'+idx);
+        if(bd&&!bd.classList.contains('open')){bd.classList.add('open');ch.classList.add('open');}
+      }, 30);
     } catch(e) {
       alert('Refinement failed: ' + e.message);
     } finally {
@@ -437,11 +721,36 @@
     }
   }
 
+  async function savePostEmail() {
+    const firstName = document.getElementById('postFirstName').value.trim();
+    const lastName = document.getElementById('postLastName').value.trim();
+    const email = document.getElementById('postEmail').value.trim();
+    const country = document.getElementById('postCountry').value;
+
+    if (!firstName) { alert('Please enter your first name.'); return; }
+    if (!email || !email.includes('@')) { alert('Please enter a valid email.'); return; }
+    if (!country) { alert('Please select your country.'); return; }
+
+    const btn = document.getElementById('btnSavePost');
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    await saveEmail(firstName, lastName, email, country, 'post_itinerary');
+
+    btn.disabled = false;
+    document.getElementById('postSuccess').style.display = 'block';
+    document.getElementById('emailPostSection').style.opacity = '0.6';
+  }
+
   function restart() {
-    itinerary = null;
+    itinerary = null; lastParams = null;
     document.getElementById('formSection').style.display = 'block';
     document.getElementById('itinOutput').style.display = 'none';
     document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('postSuccess').style.display = 'none';
+    document.getElementById('emailPostSection').style.opacity = '1';
+    document.getElementById('btnSavePost').disabled = false;
+    document.getElementById('btnSavePost').textContent = 'Save my itinerary ✓';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   buildGrids(); onCityChange(); updateDuration();
