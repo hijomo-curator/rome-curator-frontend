@@ -280,15 +280,15 @@
   let itinerary = null;
   let msgTimer = null;
 
-  function chip(d, isCity) {
-    return `<div class="interest-chip${isCity?' city-chip':''} active" data-v="${d.v}">
+  function chip(d, isCity, selected = true) {
+    return `<div class="interest-chip${isCity?' city-chip':''}${selected?' active':''}" data-v="${d.v}">
       <span class="chip-icon">${d.icon}</span>${d.label}${isCity?`<span class="city-tag">local</span>`:''}
     </div>`;
   }
 
   function buildGrids() {
     const uG = document.getElementById('uGrid');
-    uG.innerHTML = UNIVERSAL.map(d => chip(d, false)).join('');
+    uG.innerHTML = UNIVERSAL.map(d => chip(d, false, false)).join('');
     uG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
     refreshCityGrid();
   }
@@ -301,7 +301,7 @@
     document.getElementById('cityDividerLabel').textContent = city ? `${city} specials` : 'City specials';
     if (specials.length) {
       div.style.display = 'flex';
-      cG.innerHTML = specials.map(d => chip(d, true)).join('');
+      cG.innerHTML = specials.map(d => chip(d, true, false)).join('');
       cG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
     } else {
       div.style.display = 'none';
