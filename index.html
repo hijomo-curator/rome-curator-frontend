@@ -550,12 +550,12 @@
   }
 
   // ── Email save (calls backend — no Sheetdb URL in frontend) ──
-  async function saveEmail(firstName, lastName, email, country, source) {
+  async function saveEmail(firstName, lastName, email, country, source, extraData = {}) {
     try {
       await fetch(`${BACKEND_URL}/save-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, country, source }),
+        body: JSON.stringify({ firstName, lastName, email, country, source, ...extraData }),
       });
     } catch(e) {
       console.error('Email save failed:', e);
@@ -590,7 +590,7 @@
     // Fire-and-forget email save — doesn't block itinerary generation
     saveEmail(firstName, lastName, email, country, 'landing_form');
 
-    lastParams = { city, days, pace, month, travelStyle, budget, interests };
+    lastParams = { city, days, pace, month, travelStyle, budget, interests, firstName, email };
 
     document.getElementById('formSection').style.display = 'none';
     document.getElementById('loadingState').style.display = 'block';
@@ -603,15 +603,15 @@
     document.getElementById('loadingMsg').textContent = msgs[0];
     msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
 
-    await callGenerate(city, days, pace, month, travelStyle, budget, interests);
+    await callGenerate(city, days, pace, month, travelStyle, budget, interests, firstName, email);
   }
 
-  async function callGenerate(city, days, pace, month, travelStyle, budget, interests) {
+  async function callGenerate(city, days, pace, month, travelStyle, budget, interests, firstName, email) {
     try {
       const res = await fetch(`${BACKEND_URL}/generate-itinerary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city, days, pace, month, travelStyle, budget, interests }),
+        body: JSON.stringify({ city, days, pace, month, travelStyle, budget, interests, firstName, email }),
       });
       clearInterval(msgTimer);
       const data = await res.json();
@@ -633,12 +633,12 @@
     document.getElementById('errorBox').style.display = 'none';
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('loadingTitle').textContent = 'Trying again…';
-    const { city, days, pace, month, travelStyle, budget, interests } = lastParams;
+    const { city, days, pace, month, travelStyle, budget, interests, firstName, email } = lastParams;
     const msgs = LOADING_MSGS[city] || LOADING_MSGS['default'];
     let mi = 0;
     document.getElementById('loadingMsg').textContent = msgs[0];
     msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
-    await callGenerate(city, days, pace, month, travelStyle, budget, interests);
+    await callGenerate(city, days, pace, month, travelStyle, budget, interests, firstName, email);
   }
 
   function renderOutput(data, city, days, pace, month) {
@@ -734,7 +734,13 @@
     const btn = document.getElementById('btnSavePost');
     btn.disabled = true; btn.textContent = 'Saving…';
 
-    await saveEmail(firstName, lastName, email, country, 'post_itinerary');
+    await saveEmail(firstName, lastName, email, country, 'post_itinerary', {
+      city: lastParams?.city,
+      itinerary: itinerary,
+      travelMonth: lastParams?.month,
+      travelStyle: lastParams?.travelStyle,
+      budget: lastParams?.budget,
+    });
 
     btn.disabled = false;
     document.getElementById('postSuccess').style.display = 'block';
