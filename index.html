@@ -310,14 +310,14 @@
 
     <!-- Email capture - landing -->
     <div class="email-capture-box">
-      <div class="email-capture-title">Get your itinerary in your inbox</div>
-      <div class="email-capture-sub">We'll save your curated itinerary and send updates. No spam — ever.</div>
+      <div class="email-capture-title">Want your itinerary in your inbox?</div>
+      <div class="email-capture-sub">Optional. Fill in your details and we'll email it to you after generating. No spam — ever.</div>
       <div class="form-row-2">
-        <input class="email-input-sm" type="text" id="landingFirstName" placeholder="First name *" />
-        <input class="email-input-sm" type="text" id="landingLastName" placeholder="Last name" />
+        <input class="email-input-sm" type="text" id="landingFirstName" placeholder="First name (optional)" />
+        <input class="email-input-sm" type="text" id="landingLastName" placeholder="Last name (optional)" />
       </div>
       <div class="form-row-2">
-        <input class="email-input-sm" type="email" id="landingEmail" placeholder="Email address *" />
+        <input class="email-input-sm" type="email" id="landingEmail" placeholder="Email address (optional)" />
         <div class="select-wrap">
           <select id="landingCountry" class="email-input-sm" style="background:white;border:1px solid #D4C9B8;">
             <option value="">Country *</option>
@@ -583,12 +583,16 @@
     const email = document.getElementById('landingEmail').value.trim();
     const country = document.getElementById('landingCountry').value;
 
-    if (!firstName) { alert('Please enter your first name.'); return; }
-    if (!email || !email.includes('@')) { alert('Please enter a valid email address.'); return; }
-    if (!country) { alert('Please select your country.'); return; }
+    // Email details are optional — save to sheet only if all provided
+    if (firstName && email && email.includes('@') && country) {
+      saveEmail(firstName, lastName, email, country, 'landing_form');
+    }
 
-    // Fire-and-forget email save — doesn't block itinerary generation
-    saveEmail(firstName, lastName, email, country, 'landing_form');
+    // Pre-fill post-itinerary form with landing details if provided
+    if (firstName) document.getElementById('postFirstName').value = firstName;
+    if (lastName) document.getElementById('postLastName').value = lastName;
+    if (email) document.getElementById('postEmail').value = email;
+    if (country) document.getElementById('postCountry').value = country;
 
     lastParams = { city, days, pace, month, travelStyle, budget, interests, firstName, email };
 
@@ -603,15 +607,15 @@
     document.getElementById('loadingMsg').textContent = msgs[0];
     msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
 
-    await callGenerate(city, days, pace, month, travelStyle, budget, interests, firstName, email);
+    await callGenerate(city, days, pace, month, travelStyle, budget, interests);
   }
 
-  async function callGenerate(city, days, pace, month, travelStyle, budget, interests, firstName, email) {
+  async function callGenerate(city, days, pace, month, travelStyle, budget, interests) {
     try {
       const res = await fetch(`${BACKEND_URL}/generate-itinerary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city, days, pace, month, travelStyle, budget, interests, firstName, email }),
+        body: JSON.stringify({ city, days, pace, month, travelStyle, budget, interests }),
       });
       clearInterval(msgTimer);
       const data = await res.json();
@@ -633,12 +637,12 @@
     document.getElementById('errorBox').style.display = 'none';
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('loadingTitle').textContent = 'Trying again…';
-    const { city, days, pace, month, travelStyle, budget, interests, firstName, email } = lastParams;
+    const { city, days, pace, month, travelStyle, budget, interests } = lastParams;
     const msgs = LOADING_MSGS[city] || LOADING_MSGS['default'];
     let mi = 0;
     document.getElementById('loadingMsg').textContent = msgs[0];
     msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
-    await callGenerate(city, days, pace, month, travelStyle, budget, interests, firstName, email);
+    await callGenerate(city, days, pace, month, travelStyle, budget, interests);
   }
 
   function renderOutput(data, city, days, pace, month) {
