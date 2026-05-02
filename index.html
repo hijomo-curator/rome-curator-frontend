@@ -476,6 +476,16 @@
   // ── The only URL in this file. No API keys, no secrets. ──
   const BACKEND_URL = "https://rome-curator-backend.onrender.com";
 
+  // ── Wake-up ping — silently warms up Render on page load ──
+  // Render free tier spins down after inactivity (50s cold start).
+  // This fires immediately when the page loads so the backend is
+  // warm by the time the user finishes filling the form.
+  (function pingBackend() {
+    fetch(BACKEND_URL + '/')
+      .then(() => console.log('[ping] Backend warm'))
+      .catch(() => console.log('[ping] Backend waking up…'));
+  })();
+
   const CITY_TAGLINES = {
     'Rome':        ['See <em>Rome</em><br>like a local.', 'Not the tour bus version. A curated Rome itinerary built around food, culture, and the streets most visitors never find.'],
     'Florence':    ['See <em>Florence</em><br>like a local.', 'Beyond the Uffizi queues. A curated Florence itinerary built around wine, markets, and the neighbourhoods tourists miss.'],
