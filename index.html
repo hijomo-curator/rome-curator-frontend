@@ -162,20 +162,75 @@
 
     /* MOBILE */
     @media (max-width: 600px) {
+      /* Layout */
+      .app-shell { padding: 0 0 40px; }
       .header { padding: 24px 16px 0; }
-      .header-title { font-size: 34px; }
-      .form-section { padding: 20px 16px; }
-      .form-row-3, .form-row-3-equal, .form-row-2 { grid-template-columns: 1fr; }
-      .interest-grid { grid-template-columns: repeat(3, 1fr); }
-      .day-hd { padding: 14px 16px; }
-      .day-bd { padding: 4px 16px 16px; }
-      .itin-header { padding: 20px 16px; }
-      .email-post-section { padding: 20px 16px; }
-      .email-post-grid { grid-template-columns: 1fr; }
-      .itin-footer { padding: 16px; flex-direction: column; align-items: stretch; }
-      .btn-restart { text-align: center; }
-      .disclaimer { padding: 16px; }
+      .header-title { font-size: 36px; }
+      .header-sub { font-size: 13px; }
+      .form-section { padding: 20px 16px 24px; }
+      .form-section-title { margin-bottom: 14px; }
+
+      /* Fix iOS auto-zoom on inputs — must be 16px+ */
+      select, input[type="number"], input[type="text"], input[type="email"] { font-size: 16px; }
+      .email-input-sm { font-size: 16px; }
+      .refine-inp { font-size: 16px; }
+
+      /* Form rows — all single column */
+      .form-row-3, .form-row-3-equal, .form-row-2 { grid-template-columns: 1fr; gap: 10px; }
+
+      /* Taller tap targets for selects and inputs */
+      select, input[type="number"], input[type="text"], input[type="email"] { padding: 13px 12px; }
+      .email-input-sm { padding: 13px 12px; }
+
+      /* Interest chips — 2 columns on small screens */
+      .interest-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .interest-chip { padding: 12px 8px 10px; font-size: 12px; }
+      .chip-icon { font-size: 18px; margin-bottom: 5px; }
+
+      /* Loading state */
+      .loading-state { padding: 40px 20px; }
+      .loading-title { font-size: 20px; }
+
+      /* Error box */
       .error-box { margin: 16px; }
+
+      /* Itinerary header */
+      .itin-header { padding: 20px 16px; }
+      .itin-title { font-size: 22px; }
+
+      /* Email post section */
+      .email-post-section { padding: 20px 16px; }
+      .email-post-grid { grid-template-columns: 1fr; gap: 10px; }
+
+      /* Day cards */
+      .day-hd { padding: 14px 16px; gap: 12px; }
+      .day-num { width: 30px; height: 30px; font-size: 13px; flex-shrink: 0; }
+      .day-title { font-size: 15px; }
+      .day-why { font-size: 11px; }
+      .day-bd { padding: 4px 16px 16px; }
+      .act-item { font-size: 13px; line-height: 1.6; }
+
+      /* Refine bar — stack vertically on mobile */
+      .refine-bar { flex-direction: column; gap: 8px; }
+      .btn-refine { width: 100%; padding: 10px; text-align: center; }
+
+      /* Footer */
+      .itin-footer { padding: 16px; flex-direction: column; align-items: stretch; gap: 12px; }
+      .btn-restart { text-align: center; padding: 13px; }
+      .footer-note { text-align: center; }
+
+      /* Disclaimer */
+      .disclaimer { padding: 16px; }
+
+      /* Email capture box */
+      .email-capture-box { padding: 16px; border-radius: 4px; }
+    }
+
+    /* Extra small screens (older/smaller Android) */
+    @media (max-width: 380px) {
+      .header-title { font-size: 30px; }
+      .interest-grid { grid-template-columns: repeat(2, 1fr); }
+      .itin-title { font-size: 19px; }
     }
   </style>
 </head>
@@ -583,8 +638,11 @@
     const email = document.getElementById('landingEmail').value.trim();
     const country = document.getElementById('landingCountry').value;
 
-    // Email details are optional — save to sheet only if all provided
-    if (firstName && email && email.includes('@') && country) {
+    // Country is mandatory for analytics — rest is optional
+    if (!country) { alert('Please select your country.'); return; }
+
+    // Save to sheet if email provided too
+    if (firstName && email && email.includes('@')) {
       saveEmail(firstName, lastName, email, country, 'landing_form');
     }
 
