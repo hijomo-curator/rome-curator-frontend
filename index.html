@@ -261,8 +261,8 @@
       </div>
       <span class="brand-name"><span>Rome</span> Curator</span>
     </div>
-    <h1 class="header-title" id="hTitle">See <em id="hCity">Rome</em><br>like a local.</h1>
-    <p class="header-sub" id="hSub">Not the tour bus version. A curated Rome itinerary built around food, culture, and the streets most visitors never find.</p>
+    <h1 class="header-title" id="hTitle">See the <em>world</em><br>like a local.</h1>
+    <p class="header-sub" id="hSub">Pick a destination to get started.</p>
     <div class="header-rule"></div>
   </div>
 
@@ -774,7 +774,8 @@
   }
 
   function updateWeatherHint() {
-    const city = document.getElementById('citySelect').value;
+    const cities = getSelectedCities();
+    const city = cities[0] || null;
     const month = parseInt(document.getElementById('travelMonth').value);
     const hint = document.getElementById('weatherHint');
     if (city && month) {
@@ -962,7 +963,8 @@
     if (!instruction || !itinerary) return;
     const btn = inp.nextElementSibling;
     btn.disabled = true; btn.textContent = '…';
-    const city = document.getElementById('citySelect').value;
+    const cities = getSelectedCities();
+    const city = (cities.length > 1 ? cities.join(' + ') : cities[0]) || (lastParams?.city) || '';
     const targetDay = itinerary.days.find(d => d.day === dayNum);
     try {
       const res = await fetch(`${BACKEND_URL}/refine-day`, {
