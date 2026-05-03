@@ -36,6 +36,14 @@
     .form-section-title { font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--stone); margin-bottom: 18px; }
     .form-row-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 0.7fr 0.7fr; gap: 12px; margin-bottom: 16px; }
+    .city-checkbox-list { display: flex; flex-direction: column; gap: 6px; max-height: 130px; overflow-y: auto; padding: 8px 10px; background: #FAF7F2; border: 1px solid #D4C9B8; border-radius: 4px; }
+    .city-checkbox-list::-webkit-scrollbar { width: 4px; }
+    .city-checkbox-list::-webkit-scrollbar-thumb { background: #D4956A; border-radius: 2px; }
+    .city-placeholder { font-size: 13px; color: #9A8878; padding: 4px 0; }
+    .city-checkbox-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .city-checkbox-item input[type="checkbox"] { width: 15px; height: 15px; accent-color: #B85C38; cursor: pointer; flex-shrink: 0; }
+    .city-checkbox-item label { font-size: 13px; color: #2C1810; cursor: pointer; line-height: 1.3; }
+    .city-checkbox-item input:checked + label { color: #B85C38; font-weight: 600; }
     select:disabled { opacity: 0.5; cursor: not-allowed; }
     .form-row-3-equal { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
@@ -179,6 +187,8 @@
 
       /* Form rows — all single column */
       .form-row-3, .form-row-3-equal, .form-row-2, .form-row-4 { grid-template-columns: 1fr; gap: 10px; }
+      .city-checkbox-list { max-height: 110px; }
+      .city-checkbox-item label { font-size: 14px; }
 
       /* Taller tap targets for selects and inputs */
       select, input[type="number"], input[type="text"], input[type="email"] { padding: 13px 12px; }
@@ -281,11 +291,9 @@
         </div>
       </div>
       <div class="form-group">
-        <label>City / Region</label>
-        <div class="select-wrap">
-          <select id="citySelect" onchange="onCityChange()" disabled>
-            <option value="">— choose country first —</option>
-          </select>
+        <label>City / Region <span id="multiCityHint" style="font-size:10px;color:#B85C38;font-weight:500;display:none;">· multi-city min 6 days</span></label>
+        <div id="cityCheckboxes" class="city-checkbox-list">
+          <span class="city-placeholder">— choose country first —</span>
         </div>
       </div>
       <div class="form-group">
@@ -681,32 +689,67 @@
     refreshCityGrid();
   }
 
-  // ── Country change handler ───────────────────────────────────
+  // ── Country change handler ────────────────────────────────────────────
   function onCountryChange() {
     const country = document.getElementById('countrySelect').value;
-    const citySelect = document.getElementById('citySelect');
-    citySelect.innerHTML = '';
+    const box = document.getElementById('cityCheckboxes');
 
     if (!country) {
-      citySelect.innerHTML = '<option value="">— choose country first —</option>';
-      citySelect.disabled = true;
+      box.innerHTML = '<span class="city-placeholder">— choose country first —</span>';
+      document.getElementById('multiCityHint').style.display = 'none';
+      resetHeader();
+      refreshCityGrid();
       return;
     }
 
     const cities = COUNTRY_CITIES[country] || [];
-    citySelect.innerHTML = '<option value="">— choose city —</option>' +
-      cities.map(c => `<option value="${c}">${c}</option>`).join('');
-    citySelect.disabled = false;
+    box.innerHTML = cities.map(c => {
+      const id = 'city_' + c.replace(/[^a-zA-Z0-9]/g, '_');
+      return '<div class="city-checkbox-item"><input type="checkbox" id="' + id + '" value="' + c + '" onchange="onCityCheckboxChange()"><label for="' + id + '">' + c + '</label></div>';
+    }).join('');
 
-    // Reset city-dependent UI
-    document.getElementById('hTitle').innerHTML = 'See the <em>world</em><br>like a local.';
-    document.getElementById('hSub').textContent = 'Pick a city to get started.';
-    document.getElementById('hCity').textContent = '';
+    resetHeader();
     refreshCityGrid();
   }
 
+  function getSelectedCities() {
+    return Array.from(document.querySelectorAll('#cityCheckboxes input[type="checkbox"]:checked'))
+      .map(cb => cb.value);
+  }
+
+  function onCityCheckboxChange() {
+    const cities = getSelectedCities();
+    const hint = document.getElementById('multiCityHint');
+    hint.style.display = cities.length > 1 ? 'inline' : 'none';
+
+    if (cities.length > 1) {
+      const daysInput = document.getElementById('days');
+      if (parseInt(daysInput.value) < 6) {
+        daysInput.value = 6;
+        updateDuration();
+      }
+    }
+
+    if (cities.length === 1) {
+      onCityChange(cities[0]);
+    } else if (cities.length > 1) {
+      const country = document.getElementById('countrySelect').value;
+      document.getElementById('hTitle').innerHTML = 'See <em>' + country + '</em><br>like a local.';
+      document.getElementById('hSub').textContent = 'A curated multi-city itinerary across ' + cities.join(', ') + '.';
+    } else {
+      resetHeader();
+    }
+    refreshCityGrid();
+  }
+
+  function resetHeader() {
+    document.getElementById('hTitle').innerHTML = 'See the <em>world</em><br>like a local.';
+    document.getElementById('hSub').textContent = 'Pick a destination to get started.';
+  }
+
   function refreshCityGrid() {
-    const city = document.getElementById('citySelect').value;
+    const cities = getSelectedCities();
+    const city = cities[0] || null;
     const specials = CITY_SPECIALS[city] || [];
     const cG = document.getElementById('cGrid');
     const div = document.getElementById('cityDivider');
@@ -721,8 +764,8 @@
     }
   }
 
-  function onCityChange() {
-    const city = document.getElementById('citySelect').value;
+  function onCityChange(cityOverride) {
+    const city = cityOverride || getSelectedCities()[0] || null;
     const tl = city && CITY_TAGLINES[city] ? CITY_TAGLINES[city] : ['See <em>the world</em><br>like a local.', 'Not the tour bus version. A curated itinerary built around food, culture, and the streets most visitors never find.'];
     document.getElementById('hTitle').innerHTML = tl[0];
     document.getElementById('hSub').textContent = tl[1];
@@ -772,8 +815,14 @@
 
   // ── Generate ──────────────────────────────────────────────────
   async function generate() {
-    const city = document.getElementById('citySelect').value;
-    if (!city) { alert('Please select a destination.'); return; }
+    const selectedCities = getSelectedCities();
+    if (!selectedCities.length) { alert('Please select at least one city.'); return; }
+    const isMultiCity = selectedCities.length > 1;
+    const city = isMultiCity ? selectedCities.join(' + ') : selectedCities[0];
+    if (isMultiCity && selectedCities.length > 1) {
+      const daysInput = document.getElementById('days');
+      if (parseInt(daysInput.value) < 6) { daysInput.value = 6; updateDuration(); }
+    }
     const days = parseInt(document.getElementById('days').value) || 4;
     const pace = document.getElementById('pace').value;
     const month = parseInt(document.getElementById('travelMonth').value);
@@ -805,13 +854,13 @@
     if (email) document.getElementById('postEmail').value = email;
     if (country) document.getElementById('postCountry').value = country;
 
-    lastParams = { city, days, pace, month, travelStyle, budget, interests, firstName, email };
+    lastParams = { city, cities: selectedCities, isMultiCity, days, pace, month, travelStyle, budget, interests, firstName, email };
 
     document.getElementById('formSection').style.display = 'none';
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('errorBox').style.display = 'none';
     document.getElementById('itinOutput').style.display = 'none';
-    document.getElementById('loadingTitle').textContent = `Your ${city} local is thinking…`;
+    document.getElementById('loadingTitle').textContent = isMultiCity ? `Planning your ${document.getElementById('countrySelect').value} journey…` : `Your ${city} local is thinking…`;
 
     const msgs = LOADING_MSGS[city] || LOADING_MSGS['default'];
     let mi = 0;
