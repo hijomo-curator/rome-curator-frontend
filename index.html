@@ -804,13 +804,15 @@
   // ── Email save (calls backend — no Sheetdb URL in frontend) ──
   async function saveEmail(firstName, lastName, email, country, source, extraData = {}) {
     try {
-      await fetch(`${BACKEND_URL}/save-email`, {
+      const res = await fetch(`${BACKEND_URL}/save-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, email, country, source, ...extraData }),
       });
+      return res.ok;
     } catch(e) {
       console.error('Email save failed:', e);
+      return false;
     }
   }
 
@@ -1000,7 +1002,7 @@
     const btn = document.getElementById('btnSavePost');
     btn.disabled = true; btn.textContent = 'Saving…';
 
-    await saveEmail(firstName, lastName, email, country, 'post_itinerary', {
+    const ok = await saveEmail(firstName, lastName, email, country, 'post_itinerary', {
       city: lastParams?.city,
       itinerary: itinerary,
       travelMonth: lastParams?.month,
@@ -1009,8 +1011,13 @@
     });
 
     btn.disabled = false;
-    document.getElementById('postSuccess').style.display = 'block';
-    document.getElementById('emailPostSection').style.opacity = '0.6';
+    if (ok) {
+      document.getElementById('postSuccess').style.display = 'block';
+      document.getElementById('emailPostSection').style.opacity = '0.6';
+    } else {
+      btn.textContent = 'Save my itinerary ✓';
+      alert('Something went wrong saving your details. Please try again.');
+    }
   }
 
   function restart() {
