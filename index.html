@@ -481,7 +481,10 @@
 
     <div class="itin-footer">
       <p class="footer-note">Take this to your booking provider — flights, stays, transport.</p>
-      <button class="btn-restart" onclick="restart()">← Plan another trip</button>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+        <button class="btn-restart" id="btnShare" onclick="copyShareLink()">🔗 Share itinerary</button>
+        <button class="btn-restart" onclick="restart()">← Plan another trip</button>
+      </div>
     </div>
 
     <div class="disclaimer">
@@ -950,6 +953,11 @@
     toggleDay(0);
     document.getElementById('itinOutput').style.display = 'block';
     document.getElementById('itinOutput').scrollIntoView({ behavior: 'smooth' });
+
+    // ── Update URL to shareable link if slug exists ───────────────
+    if (data.slug) {
+      window.history.replaceState({}, '', `/itinerary/${data.slug}`);
+    }
   }
 
   function toggleDay(i) {
@@ -1030,9 +1038,47 @@
     document.getElementById('btnSavePost').disabled = false;
     document.getElementById('btnSavePost').textContent = 'Save my itinerary ✓';
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Clear slug from URL
+    window.history.replaceState({}, '', '/');
+  }
+
+  // ── Share button ──────────────────────────────────────────────────
+  function copyShareLink() {
+    const slug = itinerary?.slug;
+    if (!slug) return;
+    const url = `https://romecurator.com/itinerary/${slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('btnShare');
+      btn.textContent = '✓ Link copied!';
+      setTimeout(() => btn.textContent = '🔗 Share itinerary', 2000);
+    });
+  }
+
+  // ── Shareable link — load itinerary from slug on page load ────────
+  async function loadFromSlug() {
+    const match = window.location.pathname.match(/^\/itinerary\/([a-z0-9]+)$/);
+    if (!match) return false;
+    const slug = match[1];
+    try {
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('loadingSection').style.display = 'block';
+      document.getElementById('loadingMsg').textContent = 'Loading itinerary…';
+      const res = await fetch(`${BACKEND_URL}/itinerary/${slug}`);
+      if (!res.ok) throw new Error('Not found');
+      const data = await res.json();
+      itinerary = data;
+      lastParams = { city: data.city };
+      renderItinerary(data);
+      return true;
+    } catch {
+      document.getElementById('loadingSection').style.display = 'none';
+      document.getElementById('formSection').style.display = 'block';
+      return false;
+    }
   }
 
   buildGrids(); onCityChange(); updateDuration();
+  loadFromSlug();
 </script>
 </body>
 </html>
