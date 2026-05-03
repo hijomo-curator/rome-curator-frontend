@@ -35,6 +35,8 @@
     .form-section { padding: 28px 32px 32px; background: white; border-bottom: 1px solid var(--parchment); }
     .form-section-title { font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--stone); margin-bottom: 18px; }
     .form-row-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 0.7fr 0.7fr; gap: 12px; margin-bottom: 16px; }
+    select:disabled { opacity: 0.5; cursor: not-allowed; }
     .form-row-3-equal { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
@@ -176,7 +178,7 @@
       .refine-inp { font-size: 16px; }
 
       /* Form rows — all single column */
-      .form-row-3, .form-row-3-equal, .form-row-2 { grid-template-columns: 1fr; gap: 10px; }
+      .form-row-3, .form-row-3-equal, .form-row-2, .form-row-4 { grid-template-columns: 1fr; gap: 10px; }
 
       /* Taller tap targets for selects and inputs */
       select, input[type="number"], input[type="text"], input[type="email"] { padding: 13px 12px; }
@@ -258,23 +260,31 @@
   <div class="form-section" id="formSection">
     <p class="form-section-title">Plan your trip</p>
 
-    <!-- Row 1: Destination, Duration, Pace -->
-    <div class="form-row-3">
+    <!-- Row 1: Country, City, Duration, Pace -->
+    <div class="form-row-4">
       <div class="form-group">
-        <label>Destination</label>
+        <label>Country</label>
         <div class="select-wrap">
-          <select id="citySelect" onchange="onCityChange()">
-            <option value="">— choose city —</option>
-            <option value="Rome" selected>Rome, Italy</option>
-            <option value="Florence">Florence, Italy</option>
-            <option value="Lisbon">Lisbon, Portugal</option>
-            <option value="Tokyo">Tokyo, Japan</option>
-            <option value="Mexico City">Mexico City, Mexico</option>
-            <option value="Oaxaca">Oaxaca, Mexico</option>
-            <option value="Istanbul">Istanbul, Turkey</option>
-            <option value="Chiang Mai">Chiang Mai, Thailand</option>
-            <option value="Goa">Goa, India</option>
-            <option value="Mumbai">Mumbai, India</option>
+          <select id="countrySelect" onchange="onCountryChange()">
+            <option value="">— choose country —</option>
+            <option value="Italy">🇮🇹 Italy</option>
+            <option value="Portugal">🇵🇹 Portugal</option>
+            <option value="Japan">🇯🇵 Japan</option>
+            <option value="Thailand">🇹🇭 Thailand</option>
+            <option value="India">🇮🇳 India</option>
+            <option value="Sri Lanka">🇱🇰 Sri Lanka</option>
+            <option value="Vietnam">🇻🇳 Vietnam</option>
+            <option value="Kenya">🇰🇪 Kenya</option>
+            <option value="Spain">🇪🇸 Spain</option>
+            <option value="Greece">🇬🇷 Greece</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>City / Region</label>
+        <div class="select-wrap">
+          <select id="citySelect" onchange="onCityChange()" disabled>
+            <option value="">— choose country first —</option>
           </select>
         </div>
       </div>
@@ -486,24 +496,87 @@
       .catch(() => console.log('[ping] Backend waking up…'));
   })();
 
+  // ── Country → Cities mapping
+  const COUNTRY_CITIES = {
+    'Italy':     ['Rome', 'Florence', 'Amalfi Coast', 'Sicily'],
+    'Portugal':  ['Lisbon', 'Porto'],
+    'Japan':     ['Tokyo', 'Kyoto', 'Osaka', 'Mount Fuji & Hakone'],
+    'Thailand':  ['Bangkok', 'Chiang Mai', 'Phuket'],
+    'India':     ['Mumbai', 'North Goa', 'South Goa'],
+    'Sri Lanka': ['Colombo', 'Galle', 'Kandy'],
+    'Vietnam':   ['Hanoi', 'Hoi An', 'Ho Chi Minh City'],
+    'Kenya':     ['Nairobi', 'Maasai Mara', 'Diani Beach'],
+    'Spain':     ['Madrid', 'Barcelona', 'Seville'],
+    'Greece':    ['Athens', 'Santorini', 'Mykonos'],
+  };
+
   const CITY_TAGLINES = {
-    'Rome':        ['See <em>Rome</em><br>like a local.', 'Not the tour bus version. A curated Rome itinerary built around food, culture, and the streets most visitors never find.'],
-    'Florence':    ['See <em>Florence</em><br>like a local.', 'Beyond the Uffizi queues. A curated Florence itinerary built around wine, markets, and the neighbourhoods tourists miss.'],
-    'Lisbon':      ['See <em>Lisbon</em><br>like a local.', 'Past the Tram 28 crowds. A curated Lisbon itinerary built around fado, pastéis, and the hills that matter.'],
-    'Tokyo':       ['See <em>Tokyo</em><br>like a local.', 'Beyond the neon. A curated Tokyo itinerary built around ramen, izakayas, and the quiet side streets worth finding.'],
-    'Mexico City': ['See <em>Mexico City</em><br>like a local.', 'Past the tourist corridor. A curated CDMX itinerary built around tacos, mezcal, and the colonias worth exploring.'],
-    'Oaxaca':      ['See <em>Oaxaca</em><br>like a local.', 'Deeper than the Zócalo. A curated Oaxaca itinerary built around mole, mezcal, and artisan culture.'],
-    'Istanbul':    ['See <em>Istanbul</em><br>like a local.', 'Past the Sultanahmet crowds. A curated Istanbul itinerary built around baklava, hammams, and the neighbourhoods that breathe.'],
-    'Chiang Mai':  ['See <em>Chiang Mai</em><br>like a local.', 'Beyond the elephant camps. A curated Chiang Mai itinerary built around street food, temple trails, and the real north.'],
-    'Goa':         ['See <em>Goa</em><br>like a local.', 'Past the package beach resorts. A curated Goa itinerary built around seafood, spice farms, and the coast most tourists never find.'],
-    'Mumbai':      ['See <em>Mumbai</em><br>like a local.', 'Beyond the Bollywood clichés. A curated Mumbai itinerary built around street food, dabbawala culture, and the city\'s real energy.'],
+    'Rome':                ['See <em>Rome</em><br>like a local.', 'Not the tour bus version. A curated Rome itinerary built around food, culture, and the streets most visitors never find.'],
+    'Florence':            ['See <em>Florence</em><br>like a local.', 'Beyond the Uffizi queues. A curated Florence itinerary built around wine, markets, and the neighbourhoods tourists miss.'],
+    'Amalfi Coast':        ['See the <em>Amalfi Coast</em><br>like a local.', 'Past the gridlocked roads. A curated Amalfi itinerary built around hidden coves, local lemons, and the villages most visitors drive through.'],
+    'Sicily':              ['See <em>Sicily</em><br>like a local.', 'Beyond the beach resorts. A curated Sicily itinerary built around street food, Greek temples, and the baroque towns most visitors never reach.'],
+    'Lisbon':              ['See <em>Lisbon</em><br>like a local.', 'Past the Tram 28 crowds. A curated Lisbon itinerary built around fado, pastéis, and the hills that matter.'],
+    'Porto':               ['See <em>Porto</em><br>like a local.', 'Beyond the wine caves. A curated Porto itinerary built around francesinhas, tile-covered churches, and the river neighbourhoods tourists skip.'],
+    'Tokyo':               ['See <em>Tokyo</em><br>like a local.', 'Beyond the neon. A curated Tokyo itinerary built around ramen, izakayas, and the quiet side streets worth finding.'],
+    'Kyoto':               ['See <em>Kyoto</em><br>like a local.', 'Before the tour buses arrive. A curated Kyoto itinerary built around early mornings, kaiseki, and the temples worth the effort.'],
+    'Osaka':               ['See <em>Osaka</em><br>like a local.', 'Beyond Dotonbori. A curated Osaka itinerary built around street food, izakayas, and the neighbourhoods where locals actually eat.'],
+    'Mount Fuji & Hakone': ['See <em>Hakone</em><br>like a local.', 'Past the package tours. A curated Hakone itinerary built around ryokans, onsen, and earning your view of Fuji.'],
+    'Bangkok':             ['See <em>Bangkok</em><br>like a local.', 'Beyond Khao San Road. A curated Bangkok itinerary built around boat noodles, rooftop temples, and the neighbourhoods worth getting lost in.'],
+    'Chiang Mai':          ['See <em>Chiang Mai</em><br>like a local.', 'Beyond the elephant camps. A curated Chiang Mai itinerary built around khao soi, temple trails, and the real north.'],
+    'Phuket':              ['See <em>Phuket</em><br>like a local.', 'Past the Patong chaos. A curated Phuket itinerary built around fresh seafood, hidden beaches, and the island most tourists never find.'],
+    'Mumbai':              ['See <em>Mumbai</em><br>like a local.', "Beyond the Bollywood clichés. A curated Mumbai itinerary built around street food, dabbawala culture, and the city's real energy."],
+    'North Goa':           ['See <em>North Goa</em><br>like a local.', 'Past the Calangute crowds. A curated North Goa itinerary built around beach shacks, flea markets, and the villages worth finding.'],
+    'South Goa':           ['See <em>South Goa</em><br>like a local.', 'Beyond the party beaches. A curated South Goa itinerary built around quiet coves, Goan fish curry, and the coast most tourists rush past.'],
+    'Colombo':             ['See <em>Colombo</em><br>like a local.', "Beyond the airport stopover. A curated Colombo itinerary built around kottu roti, colonial streets, and the city's underrated energy."],
+    'Galle':               ['See <em>Galle</em><br>like a local.', "Inside the Fort walls and beyond. A curated Galle itinerary built around Dutch architecture, fresh crab, and the south coast's quiet beaches."],
+    'Kandy':               ['See <em>Kandy</em><br>like a local.', 'Beyond the Temple of the Tooth. A curated Kandy itinerary built around Kandyan cuisine, botanical gardens, and the hill country that surrounds it.'],
+    'Hanoi':               ['See <em>Hanoi</em><br>like a local.', 'Past the Old Quarter tourist trail. A curated Hanoi itinerary built around bun cha, egg coffee, and the streets most visitors walk straight past.'],
+    'Hoi An':              ['See <em>Hoi An</em><br>like a local.', 'Before the Ancient Town fills up. A curated Hoi An itinerary built around cao lau, bicycle rides, and the beach life most visitors miss.'],
+    'Ho Chi Minh City':    ['See <em>Saigon</em><br>like a local.', 'Beyond the war museums. A curated Ho Chi Minh City itinerary built around com tam, rooftop bars, and the districts worth exploring.'],
+    'Nairobi':             ['See <em>Nairobi</em><br>like a local.', "Beyond the safari departure lounge. A curated Nairobi itinerary built around nyama choma, wildlife surprises, and the city's real creative energy."],
+    'Maasai Mara':         ['See the <em>Maasai Mara</em><br>like a local.', 'Beyond the standard game drive. A curated Mara itinerary built around the Great Migration, bush breakfasts, and the wilderness that earns its reputation.'],
+    'Diani Beach':         ['See <em>Diani</em><br>like a local.', 'Past the resort walls. A curated Diani Beach itinerary built around fresh seafood, Swahili culture, and the Indian Ocean coast at its best.'],
+    'Madrid':              ['See <em>Madrid</em><br>like a local.', 'Beyond the Prado. A curated Madrid itinerary built around bocadillos, late lunches, and the barrios where Madrileños actually spend their weekends.'],
+    'Barcelona':           ['See <em>Barcelona</em><br>like a local.', 'Past Las Ramblas. A curated Barcelona itinerary built around vermouth, hidden plazas, and the neighbourhoods that still belong to the city.'],
+    'Seville':             ['See <em>Seville</em><br>like a local.', 'Beyond the Alcázar queues. A curated Seville itinerary built around sherry, flamenco, and the Triana streets most visitors never cross the river to find.'],
+    'Athens':              ['See <em>Athens</em><br>like a local.', "Beyond the Acropolis. A curated Athens itinerary built around souvlaki, neighbourhood cafes, and the city's living culture beneath the ancient one."],
+    'Santorini':           ['See <em>Santorini</em><br>like a local.', 'Past the Oia sunset crowds. A curated Santorini itinerary built around Assyrtiko wine, caldera views, and the island without the Instagram queue.'],
+    'Mykonos':             ['See <em>Mykonos</em><br>like a local.', 'Beyond the influencer beaches. A curated Mykonos itinerary built around fresh seafood, whitewashed Hora, and the Aegean at its most beautiful.'],
   };
 
   const CITY_WEATHER = {
-    'Rome': ['cold & quiet (avg 8°C) — great for museums, few crowds','crisp & romantic (avg 10°C) — early spring blooms','mild & beautiful (avg 13°C) — perfect sightseeing weather','warm & lovely (avg 17°C) — peak spring, busy but gorgeous','warm & sunny (avg 22°C) — ideal, book ahead','hot & very busy (avg 27°C) — peak tourist season','very hot & crowded (avg 30°C) — locals flee to the coast','hot, locals on holiday (avg 29°C) — some closures','warm & golden (avg 25°C) — best month to visit Rome','mild & atmospheric (avg 19°C) — autumn colours, quieter','cool & rainy (avg 13°C) — good for indoor culture','cold & festive (avg 9°C) — Christmas markets, few tourists'],
-    'Goa': ['peak season (avg 28°C) — dry, sunny, ideal','peak season (avg 29°C) — beautiful weather, busy','hot & dry (avg 31°C) — shoulder season starting','very hot (avg 33°C) — pre-monsoon, fewer tourists','very hot (avg 34°C) — avoid if possible','monsoon begins (avg 30°C) — lush, many closures','heavy monsoon (avg 29°C) — dramatic but many places shut','monsoon (avg 29°C) — very quiet, good deals','monsoon ending (avg 29°C) — slowly reopening','post-monsoon (avg 30°C) — good shoulder season','early peak season (avg 29°C) — great weather returning','peak season (avg 28°C) — Christmas rush, book early'],
-    'Tokyo': ['cold & clear (avg 6°C) — New Year quiet, great for museums','cold, plum blossoms (avg 7°C) — fewer tourists','cool, early cherry blossom (avg 10°C) — crowds building','cherry blossom peak (avg 15°C) — stunning but very busy','mild & green (avg 19°C) — one of the best months','rainy season (avg 23°C) — hydrangeas bloom','hot & humid (avg 27°C) — summer festivals','hot & humid (avg 29°C) — peak summer, fireworks','cooler, autumnal (avg 25°C) — excellent weather','autumn colours (avg 19°C) — beautiful, busy','autumn peak (avg 13°C) — stunning foliage','cold & festive (avg 9°C) — illuminations, year-end'],
-    'default': ['winter — check local conditions','late winter — shoulder season','early spring — warming up','spring — good travel weather','late spring — excellent conditions','early summer — warm and active','peak summer — hot and busy','late summer — still warm','early autumn — pleasant temperatures','autumn — beautiful season','late autumn — cooling down','winter — festive atmosphere'],
+    'Rome':                ['cold & quiet (avg 8°C) — great for museums, few crowds','crisp & romantic (avg 10°C) — early spring blooms','mild & beautiful (avg 13°C) — perfect sightseeing weather','warm & lovely (avg 17°C) — peak spring, busy but gorgeous','warm & sunny (avg 22°C) — ideal, book ahead','hot & very busy (avg 27°C) — peak tourist season','very hot & crowded (avg 30°C) — locals flee to the coast','hot, locals on holiday (avg 29°C) — some closures','warm & golden (avg 25°C) — best month to visit Rome','mild & atmospheric (avg 19°C) — autumn colours, quieter','cool & rainy (avg 13°C) — good for indoor culture','cold & festive (avg 9°C) — Christmas markets, few tourists'],
+    'Florence':            ['cold & manageable (avg 6°C) — museums without queues','cool & pleasant (avg 8°C) — good for walking','mild & beautiful (avg 11°C) — spring flowers, busy','warm & gorgeous (avg 16°C) — peak spring, book ahead','warm & sunny (avg 20°C) — excellent','hot & very crowded (avg 25°C) — peak season','very hot (avg 28°C) — mornings only outdoors','very hot (avg 28°C) — locals on holiday','warm & golden (avg 23°C) — best month','mild & lovely (avg 17°C) — autumn colours','cool & quiet (avg 11°C) — shoulder season','cold & festive (avg 6°C) — Christmas markets'],
+    'Amalfi Coast':        ['quiet & cool (avg 12°C) — many places closed','quiet & cool (avg 12°C) — season starting','mild (avg 14°C) — opening up, quieter','warm (avg 18°C) — beautiful, some crowds','warm & sunny (avg 22°C) — excellent shoulder','hot & packed (avg 27°C) — peak gridlock','very hot & crowded (avg 29°C) — avoid if possible','very hot (avg 30°C) — quieter than July','warm & lovely (avg 26°C) — best month','mild & golden (avg 20°C) — great shoulder','cool & quiet (avg 15°C) — many places closing','cool, most things closed (avg 12°C)'],
+    'Sicily':              ['mild & quiet (avg 12°C) — low season, some closures','mild (avg 12°C) — almond blossom season','warm (avg 15°C) — spring starting, excellent','warm & beautiful (avg 18°C) — peak spring','warm & sunny (avg 22°C) — ideal','hot & busy (avg 27°C) — beach season','very hot (avg 30°C) — beaches packed','very hot (avg 30°C) — quieter than July','warm & golden (avg 26°C) — best month','mild & lovely (avg 21°C) — great shoulder','mild (avg 16°C) — quiet season','mild & festive (avg 13°C) — Christmas quiet'],
+    'Lisbon':              ['mild & quiet (avg 12°C) — low season, good deals','mild (avg 13°C) — off-peak, uncrowded','warm (avg 15°C) — spring starting','warm & lovely (avg 17°C) — excellent','warm & sunny (avg 20°C) — peak spring','hot & busy (avg 25°C) — summer arriving','hot & very crowded (avg 27°C) — peak','hot & crowded (avg 27°C) — peak','warm & golden (avg 24°C) — best month','mild & pleasant (avg 20°C) — great shoulder','mild (avg 15°C) — quieter season','mild & festive (avg 12°C) — Christmas'],
+    'Porto':               ['cool & quiet (avg 9°C) — off-peak','cool (avg 10°C) — uncrowded','mild (avg 12°C) — spring arriving','mild & lovely (avg 14°C) — excellent','warm & sunny (avg 17°C) — ideal','warm & busy (avg 21°C) — summer arriving','hot & busy (avg 23°C) — peak','hot (avg 23°C) — busy but manageable','warm & golden (avg 21°C) — best month','mild & pleasant (avg 17°C) — great','cool & quiet (avg 13°C) — shoulder','cool & festive (avg 10°C) — Christmas'],
+    'Tokyo':               ['cold & clear (avg 6°C) — New Year quiet','cold, plum blossoms (avg 7°C) — fewer tourists','cool, early cherry blossom (avg 10°C) — crowds building','cherry blossom peak (avg 15°C) — stunning but very busy','mild & green (avg 19°C) — one of the best months','rainy season (avg 23°C) — hydrangeas bloom','hot & humid (avg 27°C) — summer festivals','hot & humid (avg 29°C) — peak summer, fireworks','cooler, autumnal (avg 25°C) — excellent weather','autumn colours (avg 19°C) — beautiful, busy','autumn peak (avg 13°C) — stunning foliage','cold & festive (avg 9°C) — illuminations, year-end'],
+    'Kyoto':               ['cold & clear (avg 5°C) — temples without crowds','cold but quiet (avg 5°C) — plum blossoms','cool, cherry blossom building (avg 9°C)','cherry blossom peak (avg 15°C) — extremely busy','mild & green (avg 20°C) — excellent','rainy & humid (avg 24°C) — manage with early starts','hot & very humid (avg 28°C) — challenging','hot (avg 29°C) — peak heat','warm & golden (avg 25°C) — one of the best','autumn foliage peak (avg 18°C) — stunning','cool & quiet (avg 11°C) — shoulder','cold & festive (avg 6°C) — winter illuminations'],
+    'Osaka':               ['cold & clear (avg 6°C) — uncrowded','cold but lively (avg 6°C) — food scene year-round','mild, cherry blossoms (avg 10°C)','cherry blossom (avg 16°C) — busy but beautiful','mild & excellent (avg 20°C)','rainy (avg 24°C) — indoor food focus','hot & humid (avg 28°C) — summer festivals','hot (avg 29°C) — Osaka in full swing','warm & golden (avg 25°C) — best month','autumn colours (avg 18°C) — lovely','cool & quieter (avg 12°C)','cold & festive (avg 7°C)'],
+    'Mount Fuji & Hakone': ['cold, Fuji views excellent (avg 2°C) — onsen season','cold but clear (avg 3°C) — Fuji visible','mild (avg 7°C) — spring starting','mild, cherry blossoms (avg 13°C) — busy','warm & green (avg 18°C) — excellent','rainy season (avg 21°C) — Fuji often hidden','hot (avg 25°C) — Fuji climbing season','hot (avg 26°C) — peak Fuji season','warm & golden (avg 22°C) — best views','autumn colours (avg 16°C) — stunning','cool, Fuji views returning (avg 9°C)','cold & clear — best Fuji views (avg 3°C)'],
+    'Bangkok':             ['cool & dry (avg 27°C) — best month','warm & dry (avg 28°C) — excellent','hot & dry (avg 30°C) — getting warm','very hot (avg 33°C) — hottest month','very hot (avg 33°C) — Songkran festival','rainy season begins (avg 31°C)','heavy rain (avg 30°C) — but short bursts','heavy rain (avg 30°C) — wettest month','rain easing (avg 30°C)','pleasant (avg 29°C) — shoulder season','cool & dry returning (avg 28°C) — good','cool & dry (avg 27°C) — peak season'],
+    'Chiang Mai':          ['cool & dry (avg 21°C) — best month','warm & dry (avg 23°C) — excellent','hot & dry (avg 28°C)','very hot (avg 31°C) — Songkran','very hot (avg 31°C) — pre-monsoon','rain beginning (avg 29°C)','rainy & lush (avg 28°C)','heavy rain (avg 28°C)','rain easing (avg 28°C)','pleasant (avg 27°C) — Yi Peng lantern festival','cool & dry (avg 25°C) — great','cool & dry (avg 21°C) — peak season'],
+    'Phuket':              ['dry & sunny (avg 27°C) — peak season','dry & sunny (avg 28°C) — excellent','hot & dry (avg 29°C)','hot (avg 30°C) — season ending','monsoon arriving (avg 30°C)','heavy rain, west coast closes (avg 29°C)','heavy rain (avg 28°C)','heavy rain (avg 28°C) — half price','rain easing (avg 28°C)','dry season returning (avg 28°C)','dry & sunny (avg 28°C) — good','dry & sunny (avg 27°C) — peak season'],
+    'Mumbai':              ['cool & dry (avg 24°C) — best month','warm & dry (avg 25°C) — excellent','hot & dry (avg 28°C)','very hot (avg 30°C)','very hot & humid (avg 32°C)','monsoon begins (avg 30°C) — dramatic','heavy monsoon (avg 29°C) — flooding possible','heavy monsoon (avg 29°C) — wettest','monsoon easing (avg 29°C)','post-monsoon, pleasant (avg 29°C)','cool & excellent (avg 27°C)','cool & dry (avg 25°C) — peak season'],
+    'North Goa':           ['peak & perfect (avg 28°C) — dry, sunny, ideal','peak season (avg 29°C) — beautiful, busy','hot & dry (avg 31°C) — shoulder season','very hot (avg 33°C) — pre-monsoon','very hot (avg 34°C) — season ending','monsoon begins — many beach shacks close','heavy monsoon — most places shut','heavy monsoon — very quiet','monsoon ending (avg 29°C) — reopening','post-monsoon (avg 30°C) — shoulder season','season returning (avg 29°C) — great','peak season (avg 28°C) — Christmas rush'],
+    'South Goa':           ['peak & peaceful (avg 28°C) — quieter than north','peak season (avg 29°C) — beautiful','hot & dry (avg 31°C) — shoulder season','very hot (avg 33°C) — pre-monsoon','very hot (avg 34°C) — avoid if possible','monsoon begins — most places shut','heavy monsoon — very limited access','heavy monsoon — very quiet','monsoon ending — slowly reopening','post-monsoon (avg 30°C) — excellent shoulder','season returning (avg 29°C)','peak season (avg 28°C) — book ahead'],
+    'Colombo':             ['warm & dry (avg 29°C) — good','warm (avg 29°C) — good','hot (avg 30°C) — SW monsoon building','hot (avg 31°C)','hot & humid (avg 31°C)','SW monsoon (avg 30°C) — wet','heavy rain (avg 29°C)','heavy rain (avg 29°C)','rain easing (avg 29°C)','NE monsoon (avg 29°C) — some rain','warm & pleasant (avg 29°C)','warm & dry (avg 29°C)'],
+    'Galle':               ['dry & perfect (avg 27°C) — best month','dry & excellent (avg 27°C)','warm & dry (avg 28°C)','warm (avg 29°C) — getting humid','hot & humid (avg 30°C)','SW monsoon — heavy rain','heavy rain — dramatic coast','heavy rain','rain easing','pleasant (avg 28°C) — shoulder','warm & pleasant (avg 28°C)','dry & sunny (avg 27°C) — peak season'],
+    'Kandy':               ['cool & dry (avg 24°C) — good','cool & dry (avg 24°C)','warm (avg 26°C)','warm (avg 27°C)','hot (avg 28°C)','SW monsoon (avg 27°C) — hill country wet','heavy rain (avg 26°C)','heavy rain (avg 26°C) — Esala Perahera festival','rain easing (avg 26°C)','pleasant (avg 26°C)','cool & dry (avg 25°C)','cool & dry (avg 24°C) — good'],
+    'Hanoi':               ['cold & misty (avg 17°C) — bring layers','cold & drizzly (avg 17°C) — off-peak','mild (avg 20°C) — warming up','warm & pleasant (avg 23°C) — good','hot & humid (avg 28°C)','very hot & rainy (avg 30°C)','hot & very rainy (avg 30°C)','hot & rainy (avg 30°C)','warm & rainy (avg 28°C)','pleasant (avg 25°C) — excellent','cool (avg 21°C) — good shoulder','cold & misty (avg 17°C)'],
+    'Hoi An':              ['warm & dry (avg 21°C) — excellent','warm (avg 22°C) — good','warm (avg 24°C) — spring','hot & dry (avg 27°C) — good','hot & dry (avg 29°C) — best weather','hot (avg 30°C)','hot (avg 30°C)','hot & rainy (avg 30°C)','heavy rain (avg 27°C) — flooding possible','heavy rain & floods (avg 24°C) — check alerts','cool & rainy (avg 22°C)','cool & dry (avg 21°C) — peak season'],
+    'Ho Chi Minh City':    ['dry & pleasant (avg 27°C) — peak season','dry & hot (avg 28°C) — good','very hot (avg 30°C)','very hot (avg 32°C) — hottest month','very hot (avg 32°C) — season ending','rainy season begins (avg 30°C)','rainy (avg 29°C) — afternoon showers','heavy rain (avg 29°C)','rain easing (avg 29°C)','pleasant (avg 29°C)','dry season returning (avg 28°C)','dry & pleasant (avg 27°C) — peak'],
+    'Nairobi':             ['dry & warm (avg 22°C) — good','warm (avg 23°C)','warm (avg 23°C) — long rains beginning','long rains (avg 19°C) — wet','long rains (avg 18°C) — wet','cool & dry (avg 17°C) — good','cool & dry (avg 16°C) — great migration begins','cool (avg 17°C) — great migration peak','warm (avg 20°C) — short rains starting','warm (avg 21°C) — short rains','warm & pleasant (avg 22°C)','warm & dry (avg 22°C) — good'],
+    'Maasai Mara':         ['dry & warm — good game viewing','warm — good','hot — long rains beginning','long rains — fewer tourists','long rains — wet, lush landscape','dry season begins — game concentrating','great migration arrives — spectacular','great migration peak — river crossings','great migration continues','short rains beginning','short rains — green landscape','dry & excellent — good game viewing'],
+    'Diani Beach':         ['dry & sunny (avg 28°C) — peak season','dry & excellent (avg 28°C)','hot & humid (avg 29°C)','long rains (avg 27°C) — wet','long rains (avg 26°C) — fewer tourists','warm (avg 26°C) — rains easing','dry & warm (avg 26°C) — good','dry & sunny (avg 26°C) — excellent','warm (avg 27°C) — short rains arriving','short rains (avg 28°C)','warm & pleasant (avg 28°C)','dry & sunny (avg 28°C) — peak season'],
+    'Madrid':              ['cold & quiet (avg 6°C) — museum season','cold (avg 8°C) — uncrowded','mild (avg 11°C) — spring starting','warm & lovely (avg 15°C) — excellent','warm & sunny (avg 19°C) — ideal','hot (avg 25°C) — busy','very hot (avg 30°C) — locals flee','very hot (avg 30°C) — quiet but hot','warm & golden (avg 24°C) — best month','mild & pleasant (avg 17°C) — great','cool (avg 11°C) — shoulder','cold & festive (avg 7°C) — Christmas'],
+    'Barcelona':           ['mild & quiet (avg 10°C) — off-peak','mild (avg 11°C) — uncrowded','mild & lovely (avg 13°C) — spring','warm & sunny (avg 16°C) — excellent','warm (avg 20°C) — ideal','hot & busy (avg 24°C)','very hot & crowded (avg 27°C)','very hot (avg 28°C) — peak','warm & golden (avg 25°C) — best','mild & pleasant (avg 20°C) — great','mild (avg 14°C) — shoulder','mild & festive (avg 10°C)'],
+    'Seville':             ['mild & quiet (avg 11°C) — off-peak','mild (avg 13°C)','warm (avg 17°C) — spring starting','warm & lovely (avg 20°C) — Feria de Abril','warm & sunny (avg 24°C) — excellent','hot (avg 30°C) — getting very hot','brutal heat (avg 35°C+) — avoid','brutal heat (avg 35°C+) — avoid','warm & golden (avg 30°C) — easing','mild & pleasant (avg 23°C) — best month','mild (avg 16°C) — shoulder','mild & festive (avg 12°C)'],
+    'Athens':              ['mild & quiet (avg 11°C) — off-peak','mild (avg 12°C) — uncrowded','mild & lovely (avg 15°C) — spring','warm & sunny (avg 19°C) — excellent','warm (avg 24°C) — ideal, busy','hot & very busy (avg 30°C)','very hot & crowded (avg 33°C)','very hot (avg 33°C) — busiest','warm & golden (avg 29°C) — excellent','mild & pleasant (avg 22°C) — best shoulder','mild (avg 16°C) — quieter','mild & festive (avg 12°C)'],
+    'Santorini':           ['quiet & mild (avg 12°C) — very few tourists','quiet (avg 13°C) — romantic','mild (avg 15°C) — season starting','warm (avg 18°C) — excellent spring','warm & sunny (avg 23°C) — ideal','hot & busy (avg 27°C) — peak starting','very hot & crowded (avg 29°C) — avoid','very hot (avg 30°C) — peak crowds','warm & golden (avg 26°C) — best month','mild & pleasant (avg 22°C) — excellent','mild (avg 17°C) — quieter','mild, most places closed (avg 13°C)'],
+    'Mykonos':             ['very quiet, most closed (avg 12°C)','quiet (avg 13°C) — off season','mild (avg 15°C) — season opening','warm (avg 19°C) — shoulder season','warm & sunny (avg 23°C) — excellent','hot & busy (avg 27°C) — peak starting','very hot & packed (avg 29°C) — peak','very hot & crowded (avg 30°C) — busiest','warm (avg 27°C) — still busy','mild (avg 22°C) — quieter, great','mild (avg 17°C) — season closing','very quiet — most places closed'],
+    'default':             ['winter — check local conditions','late winter — shoulder season','early spring — warming up','spring — good travel weather','late spring — excellent conditions','early summer — warm and active','peak summer — hot and busy','late summer — still warm','early autumn — pleasant temperatures','autumn — beautiful season','late autumn — cooling down','winter — festive atmosphere'],
   };
 
   const MONTH_NAMES = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -522,26 +595,72 @@
   ];
 
   const CITY_SPECIALS = {
-    'Rome':        [{ v:'gelato', label:'Gelato trails', icon:'🍦' }, { v:'coffee', label:'Coffee culture', icon:'☕' }, { v:'roman-ruins', label:'Ruins deep-dive', icon:'🏟️' }],
-    'Florence':    [{ v:'wine', label:'Wine & enoteca', icon:'🍾' }, { v:'renaissance', label:'Renaissance art', icon:'🖼️' }, { v:'artisan', label:'Artisan crafts', icon:'🧶' }],
-    'Lisbon':      [{ v:'fado', label:'Fado & music', icon:'🎵' }, { v:'pasteis', label:'Pastéis & bakeries', icon:'🥐' }, { v:'viewpoints', label:'Viewpoints & trams', icon:'🚃' }],
-    'Tokyo':       [{ v:'ramen', label:'Ramen & izakaya', icon:'🍜' }, { v:'shrines', label:'Temples & shrines', icon:'⛩️' }, { v:'konbini', label:'Konbini culture', icon:'🏪' }],
-    'Mexico City': [{ v:'tacos', label:'Taco & street food', icon:'🌮' }, { v:'mezcal', label:'Mezcal bars', icon:'🥃' }, { v:'murals', label:'Murals & street art', icon:'🖌️' }],
-    'Oaxaca':      [{ v:'mole', label:'Mole & mezcal', icon:'🌶️' }, { v:'crafts', label:'Indigenous crafts', icon:'🧵' }, { v:'zapotec', label:'Zapotec ruins', icon:'🗿' }],
-    'Istanbul':    [{ v:'baklava', label:'Baklava & tea', icon:'🍯' }, { v:'hammam', label:'Hammam & baths', icon:'♨️' }, { v:'bazaar', label:'Grand Bazaar', icon:'🕌' }],
-    'Chiang Mai':  [{ v:'temples', label:'Temple trails', icon:'🛕' }, { v:'night-mkt', label:'Night market food', icon:'🍢' }, { v:'trekking', label:'Jungle trekking', icon:'🌲' }],
-    'Goa':         [{ v:'seafood', label:'Seafood trails', icon:'🦞' }, { v:'spice', label:'Spice farms', icon:'🌶️' }, { v:'beaches', label:'Beach culture', icon:'🏖️' }],
-    'Mumbai':      [{ v:'street-food', label:'Street food trails', icon:'🥘' }, { v:'dabba', label:'Dabbawala culture', icon:'🍱' }, { v:'bollywood', label:'Film & culture', icon:'🎬' }],
+    'Rome':                [{ v:'gelato', label:'Gelato trails', icon:'🍦' }, { v:'coffee', label:'Coffee culture', icon:'☕' }, { v:'roman-ruins', label:'Ruins deep-dive', icon:'🏟️' }],
+    'Florence':            [{ v:'wine', label:'Wine & enoteca', icon:'🍾' }, { v:'renaissance', label:'Renaissance art', icon:'🖼️' }, { v:'artisan', label:'Artisan crafts', icon:'🧶' }],
+    'Amalfi Coast':        [{ v:'lemons', label:'Lemon & limoncello', icon:'🍋' }, { v:'coastal-walks', label:'Coastal trails', icon:'🧍' }, { v:'ferries', label:'Ferry hopping', icon:'⛴️' }],
+    'Sicily':              [{ v:'street-food', label:'Street food trails', icon:'🥔' }, { v:'greek-temples', label:'Greek temples', icon:'🏛️' }, { v:'baroque', label:'Baroque towns', icon:'🏰' }],
+    'Lisbon':              [{ v:'fado', label:'Fado & music', icon:'🎵' }, { v:'pasteis', label:'Pastéis & bakeries', icon:'🥐' }, { v:'viewpoints', label:'Viewpoints & trams', icon:'🚃' }],
+    'Porto':               [{ v:'wine', label:'Port wine caves', icon:'🍷' }, { v:'tiles', label:'Azulejo tiles', icon:'🧩' }, { v:'francesinha', label:'Francesinha trail', icon:'🥪' }],
+    'Tokyo':               [{ v:'ramen', label:'Ramen & izakaya', icon:'🍜' }, { v:'shrines', label:'Temples & shrines', icon:'⛩️' }, { v:'konbini', label:'Konbini culture', icon:'🏪' }],
+    'Kyoto':               [{ v:'matcha', label:'Matcha & tea', icon:'🍵' }, { v:'geisha', label:'Geisha districts', icon:'🏨' }, { v:'zen-gardens', label:'Zen gardens', icon:'🍃' }],
+    'Osaka':               [{ v:'takoyaki', label:'Takoyaki & okonomiyaki', icon:'🐙' }, { v:'kushikatsu', label:'Kushikatsu bars', icon:'🍢' }, { v:'namba', label:'Namba nightlife', icon:'🎮' }],
+    'Mount Fuji & Hakone': [{ v:'onsen', label:'Onsen & ryokan', icon:'♨️' }, { v:'fuji-views', label:'Fuji viewpoints', icon:'🗻' }, { v:'ropeway', label:'Hakone ropeway', icon:'🚡' }],
+    'Bangkok':             [{ v:'temples', label:'Temple trails', icon:'🛕' }, { v:'street-food', label:'Street food & markets', icon:'🍜' }, { v:'rooftops', label:'Rooftop bars', icon:'🍹' }],
+    'Chiang Mai':          [{ v:'temples', label:'Temple trails', icon:'🛕' }, { v:'night-mkt', label:'Night market food', icon:'🍢' }, { v:'trekking', label:'Jungle trekking', icon:'🌲' }],
+    'Phuket':              [{ v:'beaches', label:'Beach hopping', icon:'🏖️' }, { v:'seafood', label:'Fresh seafood', icon:'🦞' }, { v:'islands', label:'Island day trips', icon:'⛵' }],
+    'Mumbai':              [{ v:'street-food', label:'Street food trails', icon:'🥘' }, { v:'dabba', label:'Dabbawala culture', icon:'🍱' }, { v:'bollywood', label:'Film & culture', icon:'🎬' }],
+    'North Goa':           [{ v:'seafood', label:'Beach shack seafood', icon:'🦞' }, { v:'flea-markets', label:'Flea markets', icon:'🛍️' }, { v:'feni', label:'Feni & cashew trails', icon:'🥃' }],
+    'South Goa':           [{ v:'beaches', label:'Quiet beaches', icon:'🏖️' }, { v:'seafood', label:'Goan fish curry', icon:'🐟' }, { v:'wildlife', label:'Wildlife sanctuary', icon:'🦊' }],
+    'Colombo':             [{ v:'kottu', label:'Kottu & hoppers', icon:'🍛' }, { v:'colonial', label:'Colonial architecture', icon:'🏛️' }, { v:'pettah', label:'Pettah market', icon:'🛍️' }],
+    'Galle':               [{ v:'fort', label:'Galle Fort walk', icon:'🏰' }, { v:'seafood', label:'Fresh crab & tuna', icon:'🦀' }, { v:'beaches', label:'South coast beaches', icon:'🏖️' }],
+    'Kandy':               [{ v:'temple', label:'Temple of the Tooth', icon:'🛕' }, { v:'tea', label:'Ceylon tea culture', icon:'🍵' }, { v:'botanical', label:'Botanical gardens', icon:'🌺' }],
+    'Hanoi':               [{ v:'pho', label:'Phở & bun cha', icon:'🍜' }, { v:'egg-coffee', label:'Egg coffee culture', icon:'☕' }, { v:'old-quarter', label:'Old Quarter trails', icon:'🛵' }],
+    'Hoi An':              [{ v:'cao-lau', label:'Cao lau & white rose', icon:'🍜' }, { v:'lanterns', label:'Lantern nights', icon:'🏮' }, { v:'tailors', label:'Bespoke tailoring', icon:'🧵' }],
+    'Ho Chi Minh City':    [{ v:'com-tam', label:'Com tam & banh mi', icon:'🍚' }, { v:'history', label:'War history sites', icon:'🏛️' }, { v:'rooftops', label:'Rooftop bar scene', icon:'🍹' }],
+    'Nairobi':             [{ v:'nyama-choma', label:'Nyama choma', icon:'🍖' }, { v:'wildlife', label:'Urban wildlife', icon:'🦒' }, { v:'art-scene', label:'Art & creative scene', icon:'🎨' }],
+    'Maasai Mara':         [{ v:'migration', label:'Great Migration', icon:'🦓' }, { v:'big-five', label:'Big Five tracking', icon:'🦏' }, { v:'balloon', label:'Hot air balloon', icon:'🎈' }],
+    'Diani Beach':         [{ v:'seafood', label:'Swahili seafood', icon:'🦞' }, { v:'snorkelling', label:'Reef snorkelling', icon:'🤿' }, { v:'colobus', label:'Colobus monkeys', icon:'🐒' }],
+    'Madrid':              [{ v:'tapas', label:'Tapas & vermouth', icon:'🍷' }, { v:'prado', label:'Prado & Reina Sofia', icon:'🖼️' }, { v:'rastro', label:'El Rastro market', icon:'🛍️' }],
+    'Barcelona':           [{ v:'vermouth', label:'Vermouth culture', icon:'🍷' }, { v:'gaudi', label:'Gaudí architecture', icon:'🏗️' }, { v:'born', label:'El Born & Goth quarter', icon:'🚺' }],
+    'Seville':             [{ v:'flamenco', label:'Flamenco & sherry', icon:'💃' }, { v:'tapas', label:'Tapas bar hopping', icon:'🍴' }, { v:'triana', label:'Triana neighbourhood', icon:'🌉' }],
+    'Athens':              [{ v:'souvlaki', label:'Souvlaki trails', icon:'🍖' }, { v:'acropolis', label:'Acropolis & history', icon:'🏛️' }, { v:'neighbourhood', label:'Exarcheia & Psiri', icon:'🚺' }],
+    'Santorini':           [{ v:'wine', label:'Assyrtiko wine', icon:'🍷' }, { v:'caldera', label:'Caldera views', icon:'🌄' }, { v:'volcanic', label:'Volcano & hot springs', icon:'🌋' }],
+    'Mykonos':             [{ v:'beaches', label:'Beach clubs', icon:'🏖️' }, { v:'seafood', label:'Fresh seafood', icon:'🦞' }, { v:'hora', label:'Hora & Little Venice', icon:'🛶' }],
   };
 
   const LOADING_MSGS = {
-    'Rome':        ['Calling our contact in Testaccio…','Sourcing the best supplì in the city…','Routing you past the tourist menus…','Checking the Porta Portese schedule…'],
-    'Florence':    ['Consulting the enoteca list…','Finding the non-touristy Duomo spots…','Sourcing the local bistecca…'],
-    'Lisbon':      ['Checking the Tram 28 schedule…','Finding the freshest pastéis de nata…'],
-    'Tokyo':       ['Consulting the ramen master…','Mapping the izakaya alleys…'],
-    'Goa':         ['Finding the freshest catch of the day…','Locating the spice farm contacts…'],
-    'Mumbai':      ['Navigating the dabbawala routes…','Finding the best chaat stalls…'],
-    'default':     ['Consulting our local contacts…','Finding the places worth your time…','Curating your experience…'],
+    'Rome':                ['Calling our contact in Testaccio…','Sourcing the best supplì in the city…','Routing you past the tourist menus…'],
+    'Florence':            ['Consulting the enoteca list…','Finding the non-touristy Duomo spots…','Sourcing the local bistecca…'],
+    'Amalfi Coast':        ['Checking the ferry schedules…','Finding the hidden coves…','Sourcing the best limoncello…'],
+    'Sicily':              ['Locating the best arancini…','Mapping the Greek temple routes…','Finding the baroque towns worth visiting…'],
+    'Lisbon':              ['Checking the Tram 28 schedule…','Finding the freshest pastéis de nata…','Locating the best fado venue…'],
+    'Porto':               ['Sourcing the best francesinha…','Mapping the wine cave route…','Finding the Douro riverside spots…'],
+    'Tokyo':               ['Consulting the ramen master…','Mapping the izakaya alleys…','Finding the quiet side streets…'],
+    'Kyoto':               ['Checking the temple opening times…','Finding the early morning routes…','Sourcing the best matcha…'],
+    'Osaka':               ['Locating the best takoyaki…','Mapping the kushikatsu bars…','Finding the local eating streets…'],
+    'Mount Fuji & Hakone': ['Checking the Fuji weather forecast…','Booking the best ryokan views…','Mapping the ropeway route…'],
+    'Bangkok':             ['Navigating the canal routes…','Finding the best boat noodles…','Mapping the rooftop temples…'],
+    'Chiang Mai':          ['Sourcing the best khao soi…','Finding the sunrise temple routes…','Locating the night market…'],
+    'Phuket':              ['Finding the hidden beaches…','Checking the ferry to the islands…','Sourcing the freshest seafood shack…'],
+    'Mumbai':              ['Navigating the dabbawala routes…','Finding the best chaat stalls…','Mapping the local train stops…'],
+    'North Goa':           ['Finding the freshest catch of the day…','Checking the Anjuna flea market day…','Sourcing the best beach shack…'],
+    'South Goa':           ['Finding the quietest coves…','Sourcing the Goan fish curry recipe…','Checking the Cotigao wildlife timings…'],
+    'Colombo':             ['Finding the best kottu roti spot…','Navigating the Pettah market…','Sourcing the colonial history trail…'],
+    'Galle':               ['Walking the Fort ramparts…','Finding the fresh crab suppliers…','Checking the south coast beach access…'],
+    'Kandy':               ['Checking the evening puja times…','Sourcing the Ceylon tea contacts…','Mapping the botanical garden route…'],
+    'Hanoi':               ['Sourcing the best bun cha…','Finding the egg coffee specialists…','Navigating the Old Quarter…'],
+    'Hoi An':              ['Finding the cao lau specialist…','Checking the lantern festival schedule…','Sourcing the best tailor recommendations…'],
+    'Ho Chi Minh City':    ['Finding the best com tam…','Navigating the District 1 streets…','Sourcing the rooftop bar list…'],
+    'Nairobi':             ['Checking the Giraffe Centre times…','Finding the best nyama choma…','Navigating the Westlands food scene…'],
+    'Maasai Mara':         ['Tracking the wildebeest herds…','Checking the river crossing locations…','Booking the bush breakfast spot…'],
+    'Diani Beach':         ['Finding the freshest seafood catch…','Locating the colobus monkey trails…','Checking the reef snorkelling conditions…'],
+    'Madrid':              ['Timing the tapas bar opening hours…','Finding the El Rastro market route…','Sourcing the bocadillo spots…'],
+    'Barcelona':           ['Navigating past Las Ramblas…','Finding the vermouth bars…','Mapping the El Born backstreets…'],
+    'Seville':             ['Finding the best flamenco venue…','Sourcing the manzanilla sherry…','Mapping the Triana streets…'],
+    'Athens':              ['Finding the 8am Acropolis route…','Sourcing the best souvlaki…','Mapping the Exarcheia neighbourhood…'],
+    'Santorini':           ['Finding the Imerovigli sunset spot…','Sourcing the Assyrtiko wine…','Booking the caldera boat trip…'],
+    'Mykonos':             ['Finding the best beach club…','Mapping the Hora backstreets…','Sourcing the freshest seafood…'],
+    'default':             ['Consulting our local contacts…','Finding the places worth your time…','Curating your experience…'],
   };
 
   let itinerary = null;
@@ -559,6 +678,30 @@
     const uG = document.getElementById('uGrid');
     uG.innerHTML = UNIVERSAL.map(d => chip(d, false)).join('');
     uG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
+    refreshCityGrid();
+  }
+
+  // ── Country change handler ───────────────────────────────────
+  function onCountryChange() {
+    const country = document.getElementById('countrySelect').value;
+    const citySelect = document.getElementById('citySelect');
+    citySelect.innerHTML = '';
+
+    if (!country) {
+      citySelect.innerHTML = '<option value="">— choose country first —</option>';
+      citySelect.disabled = true;
+      return;
+    }
+
+    const cities = COUNTRY_CITIES[country] || [];
+    citySelect.innerHTML = '<option value="">— choose city —</option>' +
+      cities.map(c => `<option value="${c}">${c}</option>`).join('');
+    citySelect.disabled = false;
+
+    // Reset city-dependent UI
+    document.getElementById('hTitle').innerHTML = 'See the <em>world</em><br>like a local.';
+    document.getElementById('hSub').textContent = 'Pick a city to get started.';
+    document.getElementById('hCity').textContent = '';
     refreshCityGrid();
   }
 
