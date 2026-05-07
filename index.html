@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- PostHog Analytics -->
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture calculateEventProperties register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags on onFeatureFlags onSessionId identify setPersonProperties group reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_xnjui3Jyc9qMHWQhzbscm8uKogbzuEPbLBbNJ9XVc5Kd', {
+      api_host: 'https://eu.i.posthog.com',
+      defaults: '2026-01-30',
+      person_profiles: 'identified_only',
+    });
+  </script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -733,6 +743,15 @@
       }
     }
 
+    // ── PostHog: city selected ──
+    if (cities.length > 0 && window.posthog) {
+      posthog.capture('city_selected', {
+        cities: cities,
+        is_multi_city: cities.length > 1,
+        country: document.getElementById('countrySelect').value,
+      });
+    }
+
     if (cities.length === 1) {
       onCityChange(cities[0]);
     } else if (cities.length > 1) {
@@ -852,6 +871,11 @@
     // Save to sheet if email provided too
     if (firstName && email && email.includes('@')) {
       saveEmail(firstName, lastName, email, country, 'landing_form');
+      // ── PostHog: email captured on landing ──
+      if (window.posthog) {
+        posthog.identify(email, { email, firstName, lastName, country });
+        posthog.capture('email_saved', { source: 'landing_form', country });
+      }
     }
 
     // Pre-fill post-itinerary form with landing details if provided
@@ -921,6 +945,19 @@
             clearInterval(msgTimer);
             itinerary = event.itinerary;
             const month2 = lastParams?.month;
+            // ── PostHog: itinerary generated ──
+            if (window.posthog) posthog.capture('itinerary_generated', {
+              city: city,
+              cities: cities || [city],
+              is_multi_city: !!isMultiCity,
+              days: days,
+              pace: pace,
+              month: month2,
+              travel_style: lastParams?.travelStyle,
+              budget: lastParams?.budget,
+              interests: interests,
+              from_cache: !!event.itinerary?.fromCache,
+            });
             renderOutput(itinerary, city, days, pace, month2);
             return;
           } else if (event.type === 'error') {
@@ -1023,6 +1060,12 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Refinement failed');
+      // ── PostHog: day refined ──
+      if (window.posthog) posthog.capture('day_refined', {
+        city: city,
+        day_number: dayNum,
+        instruction: instruction,
+      });
       itinerary.days = itinerary.days.map(d => d.day === dayNum ? data : d);
       renderOutput(itinerary, city, null, null, lastParams?.month);
       setTimeout(() => {
@@ -1059,6 +1102,16 @@
 
     btn.disabled = false;
     if (ok) {
+      // ── PostHog: email saved post-itinerary ──
+      if (window.posthog) {
+        posthog.identify(email, { email, firstName, lastName, country });
+        posthog.capture('email_saved', {
+          source: 'post_itinerary',
+          city: lastParams?.city,
+          travel_style: lastParams?.travelStyle,
+          budget: lastParams?.budget,
+        });
+      }
       document.getElementById('postSuccess').style.display = 'block';
       document.getElementById('emailPostSection').style.opacity = '0.6';
     } else {
@@ -1087,6 +1140,11 @@
     if (!slug) return;
     const url = `https://romecurator.com/itinerary/${slug}`;
     navigator.clipboard.writeText(url).then(() => {
+      // ── PostHog: share clicked ──
+      if (window.posthog) posthog.capture('share_clicked', {
+        city: lastParams?.city,
+        slug: slug,
+      });
       const btn = document.getElementById('btnShare');
       btn.textContent = '✓ Link copied!';
       setTimeout(() => btn.textContent = '🔗 Share itinerary', 2000);
