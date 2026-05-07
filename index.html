@@ -1100,17 +1100,17 @@
     const slug = match[1];
     try {
       document.getElementById('formSection').style.display = 'none';
-      document.getElementById('loadingSection').style.display = 'block';
-      document.getElementById('loadingMsg').textContent = 'Loading itinerary…';
+      document.getElementById('loadingState').style.display = 'block';
+      document.getElementById('loadingMsg').textContent = 'Loading your itinerary…';
       const res = await fetch(`${BACKEND_URL}/itinerary/${slug}`);
       if (!res.ok) throw new Error('Not found');
       const data = await res.json();
       itinerary = data;
       lastParams = { city: data.city };
-      renderItinerary(data);
+      renderOutput(data, data.city, data.days, data.pace, data.month);
       return true;
     } catch {
-      document.getElementById('loadingSection').style.display = 'none';
+      document.getElementById('loadingState').style.display = 'none';
       document.getElementById('formSection').style.display = 'block';
       return false;
     }
