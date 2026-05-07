@@ -419,7 +419,7 @@
     <div class="loading-brand">Rome Curator</div>
     <p class="loading-title" id="loadingTitle">Your local is thinking…</p>
     <p class="loading-sub" id="loadingMsg">Finding the places worth your time</p>
-    <p class="loading-time">Usually takes 20–40 seconds. Good things take time.</p>
+    <p class="loading-time">Building your itinerary live — it'll appear as it's written.</p>
     <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
   </div>
 
@@ -873,22 +873,61 @@
     document.getElementById('loadingMsg').textContent = msgs[0];
     msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
 
-    await callGenerate(city, days, pace, month, travelStyle, budget, interests);
+    await callGenerate(city, days, pace, month, travelStyle, budget, interests, selectedCities, isMultiCity);
   }
 
-  async function callGenerate(city, days, pace, month, travelStyle, budget, interests) {
+  async function callGenerate(city, days, pace, month, travelStyle, budget, interests, cities, isMultiCity) {
     try {
-      const res = await fetch(`${BACKEND_URL}/generate-itinerary`, {
+      const res = await fetch(`${BACKEND_URL}/generate-itinerary-stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city, days, pace, month, travelStyle, budget, interests }),
+        body: JSON.stringify({ city, cities, isMultiCity, days, pace, month, travelStyle, budget, interests }),
       });
-      clearInterval(msgTimer);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Server error');
-      itinerary = data;
-      const month2 = lastParams?.month;
-      renderOutput(itinerary, city, days, pace, month2);
+
+      if (!res.ok) {
+        clearInterval(msgTimer);
+        const data = await res.json();
+        throw new Error(data.error || 'Server error');
+      }
+
+      // ── Stream processing ──────────────────────────────────────
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep incomplete line
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          let event;
+          try { event = JSON.parse(line.slice(6)); } catch { continue; }
+
+          if (event.type === 'chunk') {
+            // Live update: show how many days have been built so far
+            const dayMatches = (event.text || '').match(/"day"\s*:/g);
+            if (dayMatches) {
+              const built = document.querySelectorAll('#daysWrap .day-card').length;
+              document.getElementById('loadingMsg').textContent = built > 0
+                ? `Built ${built} of ${days} days…`
+                : document.getElementById('loadingMsg').textContent;
+            }
+          } else if (event.type === 'done') {
+            clearInterval(msgTimer);
+            itinerary = event.itinerary;
+            const month2 = lastParams?.month;
+            renderOutput(itinerary, city, days, pace, month2);
+            return;
+          } else if (event.type === 'error') {
+            throw new Error(event.error || 'Server error');
+          }
+        }
+      }
     } catch (err) {
       clearInterval(msgTimer);
       document.getElementById('loadingState').style.display = 'none';
@@ -903,12 +942,12 @@
     document.getElementById('errorBox').style.display = 'none';
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('loadingTitle').textContent = 'Trying again…';
-    const { city, days, pace, month, travelStyle, budget, interests } = lastParams;
+    const { city, cities, isMultiCity, days, pace, month, travelStyle, budget, interests } = lastParams;
     const msgs = LOADING_MSGS[city] || LOADING_MSGS['default'];
     let mi = 0;
     document.getElementById('loadingMsg').textContent = msgs[0];
     msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
-    await callGenerate(city, days, pace, month, travelStyle, budget, interests);
+    await callGenerate(city, days, pace, month, travelStyle, budget, interests, cities, isMultiCity);
   }
 
   function renderOutput(data, city, days, pace, month) {
