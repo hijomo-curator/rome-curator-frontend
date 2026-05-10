@@ -301,14 +301,14 @@
         </div>
       </div>
       <div class="form-group">
-        <label>City / Region <span id="multiCityHint" style="font-size:10px;color:#B85C38;font-weight:500;display:none;">· multi-city min 6 days</span></label>
+        <label>City / Region <span id="multiCityHint" style="font-size:10px;color:#B85C38;font-weight:500;display:none;">· multi-city</span></label>
         <div id="cityCheckboxes" class="city-checkbox-list">
           <span class="city-placeholder">— choose country first —</span>
         </div>
       </div>
       <div class="form-group">
         <label>Duration</label>
-        <input type="number" id="days" min="1" max="14" value="4" oninput="updateDuration()" />
+        <input type="number" id="days" min="1" max="4" value="3" oninput="updateDuration(); enforceDaysCap();" />
         <div class="duration-hint" id="durHint">4 days · 3 nights</div>
       </div>
       <div class="form-group">
@@ -426,10 +426,9 @@
 
   <!-- LOADING -->
   <div class="loading-state" id="loadingState">
-    <div class="loading-brand">Rome Curator</div>
     <p class="loading-title" id="loadingTitle">Your local is thinking…</p>
     <p class="loading-sub" id="loadingMsg">Finding the places worth your time</p>
-    <p class="loading-time">Building your itinerary live — it'll appear as it's written.</p>
+    <p class="loading-time" id="loadingTimeHint">This usually takes 30–45 seconds — worth the wait.</p>
     <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
   </div>
 
@@ -730,17 +729,53 @@
       .map(cb => cb.value);
   }
 
+  // ── Day cap enforcement ─────────────────────────────────────────
+  function enforceDaysCap() {
+    const cities = getSelectedCities();
+    const daysInput = document.getElementById('days');
+    const val = parseInt(daysInput.value);
+    if (cities.length <= 1) {
+      daysInput.max = MAX_DAYS_SINGLE;
+      if (val > MAX_DAYS_SINGLE) { daysInput.value = MAX_DAYS_SINGLE; updateDuration(); }
+    }
+  }
+
+  const MAX_CITIES = 4;
+  const MAX_DAYS_SINGLE = 4;
+  const MAX_DAYS_MULTI = 14;
+
   function onCityCheckboxChange() {
     const cities = getSelectedCities();
     const hint = document.getElementById('multiCityHint');
-    hint.style.display = cities.length > 1 ? 'inline' : 'none';
+    const daysInput = document.getElementById('days');
+    const currentDays = parseInt(daysInput.value);
+
+    // Enforce max 4 cities — disable unchecked boxes once limit reached
+    const allBoxes = document.querySelectorAll('#cityCheckboxes input[type="checkbox"]');
+    if (cities.length >= MAX_CITIES) {
+      allBoxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
+      hint.textContent = '· max 4 cities selected';
+      hint.style.display = 'inline';
+    } else if (cities.length > 1) {
+      allBoxes.forEach(cb => { cb.disabled = false; });
+      hint.textContent = '· multi-city';
+      hint.style.display = 'inline';
+    } else {
+      allBoxes.forEach(cb => { cb.disabled = false; });
+      hint.style.display = 'none';
+    }
 
     if (cities.length > 1) {
-      const daysInput = document.getElementById('days');
-      if (parseInt(daysInput.value) < 6) {
-        daysInput.value = 6;
-        updateDuration();
-      }
+      // Multi-city: min 6 days, max 14
+      daysInput.min = 6;
+      daysInput.max = MAX_DAYS_MULTI;
+      if (currentDays < 6) { daysInput.value = 6; updateDuration(); }
+      if (currentDays > MAX_DAYS_MULTI) { daysInput.value = MAX_DAYS_MULTI; updateDuration(); }
+    } else {
+      // Single city: min 1, max 4
+      daysInput.min = 1;
+      daysInput.max = MAX_DAYS_SINGLE;
+      if (currentDays > MAX_DAYS_SINGLE) { daysInput.value = MAX_DAYS_SINGLE; updateDuration(); }
     }
 
     // ── PostHog: city selected ──
@@ -844,7 +879,7 @@
     if (!selectedCities.length) { alert('Please select at least one city.'); return; }
     const isMultiCity = selectedCities.length > 1;
     const city = isMultiCity ? selectedCities.join(' + ') : selectedCities[0];
-    if (isMultiCity && selectedCities.length > 1) {
+    if (isMultiCity) {
       const daysInput = document.getElementById('days');
       if (parseInt(daysInput.value) < 6) { daysInput.value = 6; updateDuration(); }
     }
@@ -891,6 +926,13 @@
     document.getElementById('errorBox').style.display = 'none';
     document.getElementById('itinOutput').style.display = 'none';
     document.getElementById('loadingTitle').textContent = isMultiCity ? `Planning your ${document.getElementById('countrySelect').value} journey…` : `Your ${city} local is thinking…`;
+    // Dynamic time estimate based on days selected
+    const timeHint = document.getElementById('loadingTimeHint');
+    if (timeHint) {
+      if (days <= 3) timeHint.textContent = 'Usually ready in 20–35 seconds.';
+      else if (days <= 7) timeHint.textContent = 'Usually ready in 35–60 seconds.';
+      else timeHint.textContent = 'Usually takes 60–90 seconds for longer trips — worth the wait.';
+    }
 
     const msgs = LOADING_MSGS[city] || LOADING_MSGS['default'];
     let mi = 0;
@@ -1159,7 +1201,8 @@
     try {
       document.getElementById('formSection').style.display = 'none';
       document.getElementById('loadingState').style.display = 'block';
-      document.getElementById('loadingMsg').textContent = 'Loading your itinerary…';
+      document.getElementById('loadingTitle').textContent = 'Loading your itinerary…';
+      document.getElementById('loadingMsg').textContent = 'Fetching from our database…';
       const res = await fetch(`${BACKEND_URL}/itinerary/${slug}`);
       if (!res.ok) throw new Error('Not found');
       const data = await res.json();
