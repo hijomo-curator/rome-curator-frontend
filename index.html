@@ -180,6 +180,48 @@
     .disclaimer p { font-size: 10.5px; color: var(--stone); line-height: 1.7; }
     .disclaimer strong { color: var(--ink-light); }
 
+    /* DONATION BLOCK */
+    .donation-section { background: #FDF8F3; border-top: 1px solid var(--parchment); border-bottom: 1px solid var(--parchment); padding: 28px 32px; }
+    .donation-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--stone); margin-bottom: 8px; }
+    .donation-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: var(--ink); margin-bottom: 8px; line-height: 1.3; }
+    .donation-sub { font-size: 13px; color: var(--ink-light); line-height: 1.65; margin-bottom: 20px; max-width: 480px; }
+    .donation-tiers { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .donation-tier { border: 1.5px solid var(--parchment); border-radius: 6px; padding: 14px 12px; background: white; cursor: pointer; transition: all 0.18s; text-align: center; position: relative; }
+    .donation-tier:hover { border-color: var(--terra-light); background: #FEF9F6; }
+    .donation-tier.active { border-color: var(--terracotta); background: #FEF4EE; }
+    .donation-tier-icon { font-size: 22px; margin-bottom: 6px; display: block; }
+    .donation-tier-label { font-size: 11px; font-weight: 500; color: var(--ink-mid); margin-bottom: 3px; }
+    .donation-tier-amount { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--terracotta); }
+    .donation-tier-amount-secondary { font-size: 10px; color: var(--stone); margin-top: 1px; }
+    .donation-open-row { display: none; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .donation-open-row.visible { display: flex; }
+    .donation-open-input { flex: 1; padding: 10px 12px; border: 1.5px solid var(--parchment); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 16px; color: var(--ink); background: white; outline: none; transition: border-color 0.2s; }
+    .donation-open-input:focus { border-color: var(--terracotta); }
+    .donation-open-currency { font-size: 13px; color: var(--ink-mid); white-space: nowrap; }
+    .btn-donate { width: 100%; padding: 13px; background: var(--terracotta); color: white; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.6px; cursor: pointer; transition: background 0.2s; display: none; }
+    .btn-donate.visible { display: block; }
+    .btn-donate:hover { background: var(--terra-dark); }
+    .btn-donate:disabled { background: var(--stone); cursor: not-allowed; }
+    .donation-paypal-links { display: none; gap: 8px; flex-direction: column; }
+    .donation-paypal-links.visible { display: flex; }
+    .btn-paypal { width: 100%; padding: 12px; background: #003087; color: white; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; text-decoration: none; display: block; text-align: center; }
+    .btn-paypal:hover { background: #001f5a; }
+    .donation-note { font-size: 10.5px; color: var(--stone); margin-top: 12px; line-height: 1.6; }
+    .donation-success { display: none; padding: 14px 18px; background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 6px; margin-top: 12px; }
+    .donation-success-text { font-size: 13px; color: #14532D; font-weight: 500; }
+    .donation-success-sub { font-size: 11px; color: #166534; margin-top: 3px; }
+    @media (max-width: 600px) {
+      .donation-section { padding: 24px 16px; }
+      .donation-tiers { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+      .donation-tier { padding: 12px 8px; }
+      .donation-tier-icon { font-size: 18px; }
+      .donation-tier-amount { font-size: 14px; }
+      .donation-open-row { flex-direction: column; align-items: stretch; }
+    }
+    @media (max-width: 380px) {
+      .donation-tiers { grid-template-columns: 1fr; }
+    }
+
     /* MOBILE */
     @media (max-width: 600px) {
       /* Layout */
@@ -458,6 +500,46 @@
 
     <div class="days-wrap" id="daysWrap"></div>
 
+    <!-- DONATION BLOCK — after day cards, before email save form -->
+    <div class="donation-section" id="donationSection">
+      <p class="donation-eyebrow">Keep us independent</p>
+      <h3 class="donation-title">Rome Curator is free. If this itinerary made your trip better, buy us a coffee.</h3>
+      <p class="donation-sub">We're a small independent project with no investors, no ads, and no paywalls. Running costs are real — your support keeps the lights on.</p>
+      <div class="donation-tiers" id="donationTiers">
+        <div class="donation-tier" id="tier1" onclick="selectTier(1)">
+          <span class="donation-tier-icon">☕</span>
+          <div class="donation-tier-label">Buy us a coffee</div>
+          <div class="donation-tier-amount" id="tier1Amount">₹99</div>
+          <div class="donation-tier-amount-secondary" id="tier1AmountSec">~$1</div>
+        </div>
+        <div class="donation-tier" id="tier2" onclick="selectTier(2)">
+          <span class="donation-tier-icon">🍕</span>
+          <div class="donation-tier-label">Buy us a meal</div>
+          <div class="donation-tier-amount" id="tier2Amount">₹249</div>
+          <div class="donation-tier-amount-secondary" id="tier2AmountSec">~$3</div>
+        </div>
+        <div class="donation-tier" id="tier3" onclick="selectTier(3)">
+          <span class="donation-tier-icon">🙏</span>
+          <div class="donation-tier-label">Whatever feels right</div>
+          <div class="donation-tier-amount" id="tier3Amount">Open</div>
+          <div class="donation-tier-amount-secondary" id="tier3AmountSec">your choice</div>
+        </div>
+      </div>
+      <div class="donation-open-row" id="donationOpenRow">
+        <span class="donation-open-currency" id="donationCurrencyLabel">₹</span>
+        <input class="donation-open-input" type="number" id="donationOpenAmount" placeholder="Enter amount" min="1" max="10000" />
+      </div>
+      <button class="btn-donate" id="btnDonateRazorpay" onclick="initRazorpayDonation()">Support Rome Curator →</button>
+      <div class="donation-paypal-links" id="donationPaypalLinks">
+        <a class="btn-paypal" id="btnPaypalTier" href="#" target="_blank" rel="noopener" onclick="trackPaypalDonation()">Support on PayPal →</a>
+      </div>
+      <p class="donation-note" id="donationGatewayNote">Powered by Razorpay · Secure · Takes 30 seconds</p>
+      <div class="donation-success" id="donationSuccess">
+        <div class="donation-success-text">🎉 Thank you so much — genuinely.</div>
+        <div class="donation-success-sub">You're helping keep Rome Curator free and independent. That means a lot.</div>
+      </div>
+    </div>
+
     <!-- Email capture - post itinerary -->
     <div class="email-post-section" id="emailPostSection">
       <div class="email-post-title">📩 Save your itinerary</div>
@@ -528,6 +610,7 @@
     'Kenya':     ['Nairobi', 'Maasai Mara', 'Diani Beach'],
     'Spain':     ['Madrid', 'Barcelona', 'Seville'],
     'Greece':    ['Athens', 'Santorini', 'Mykonos'],
+    'Sweden':    ['Stockholm'],
   };
 
   const CITY_TAGLINES = {
@@ -562,6 +645,7 @@
     'Athens':              ['See <em>Athens</em><br>like a local.', "Beyond the Acropolis. A curated Athens itinerary built around souvlaki, neighbourhood cafes, and the city's living culture beneath the ancient one."],
     'Santorini':           ['See <em>Santorini</em><br>like a local.', 'Past the Oia sunset crowds. A curated Santorini itinerary built around Assyrtiko wine, caldera views, and the island without the Instagram queue.'],
     'Mykonos':             ['See <em>Mykonos</em><br>like a local.', 'Beyond the influencer beaches. A curated Mykonos itinerary built around fresh seafood, whitewashed Hora, and the Aegean at its most beautiful.'],
+    'Stockholm':           ['See <em>Stockholm</em><br>like a local.', 'Beyond the ABBA museum. A curated Stockholm itinerary built around smörgåsbord, island-hopping, and the Södermalm streets locals actually call home.'],
   };
 
   const CITY_WEATHER = {
@@ -596,6 +680,7 @@
     'Athens':              ['mild & quiet (avg 11°C) — off-peak','mild (avg 12°C) — uncrowded','mild & lovely (avg 15°C) — spring','warm & sunny (avg 19°C) — excellent','warm (avg 24°C) — ideal, busy','hot & very busy (avg 30°C)','very hot & crowded (avg 33°C)','very hot (avg 33°C) — busiest','warm & golden (avg 29°C) — excellent','mild & pleasant (avg 22°C) — best shoulder','mild (avg 16°C) — quieter','mild & festive (avg 12°C)'],
     'Santorini':           ['quiet & mild (avg 12°C) — very few tourists','quiet (avg 13°C) — romantic','mild (avg 15°C) — season starting','warm (avg 18°C) — excellent spring','warm & sunny (avg 23°C) — ideal','hot & busy (avg 27°C) — peak starting','very hot & crowded (avg 29°C) — avoid','very hot (avg 30°C) — peak crowds','warm & golden (avg 26°C) — best month','mild & pleasant (avg 22°C) — excellent','mild (avg 17°C) — quieter','mild, most places closed (avg 13°C)'],
     'Mykonos':             ['very quiet, most closed (avg 12°C)','quiet (avg 13°C) — off season','mild (avg 15°C) — season opening','warm (avg 19°C) — shoulder season','warm & sunny (avg 23°C) — excellent','hot & busy (avg 27°C) — peak starting','very hot & packed (avg 29°C) — peak','very hot & crowded (avg 30°C) — busiest','warm (avg 27°C) — still busy','mild (avg 22°C) — quieter, great','mild (avg 17°C) — season closing','very quiet — most places closed'],
+    'Stockholm':           ['cold & dark (avg -1°C) — cosy indoors, Christmas markets linger','cold (avg 0°C) — off-peak, great museum time','cold & brightening (avg 3°C) — early spring','mild (avg 9°C) — city waking up, fewer tourists','mild & lovely (avg 15°C) — blossom season, excellent','warm & long days (avg 19°C) — Midsommar magic','warm & bright (avg 22°C) — peak season, archipelago time','warm (avg 21°C) — still summer, busy','mild & golden (avg 16°C) — best shoulder month','cool & autumnal (avg 10°C) — foliage, quiet','cold (avg 5°C) — off season','cold & festive (avg 1°C) — Christmas markets, hygge'],
     'default':             ['winter — check local conditions','late winter — shoulder season','early spring — warming up','spring — good travel weather','late spring — excellent conditions','early summer — warm and active','peak summer — hot and busy','late summer — still warm','early autumn — pleasant temperatures','autumn — beautiful season','late autumn — cooling down','winter — festive atmosphere'],
   };
 
@@ -646,6 +731,7 @@
     'Athens':              [{ v:'souvlaki', label:'Souvlaki trails', icon:'🍖' }, { v:'acropolis', label:'Acropolis & history', icon:'🏛️' }, { v:'neighbourhood', label:'Exarcheia & Psiri', icon:'🚺' }],
     'Santorini':           [{ v:'wine', label:'Assyrtiko wine', icon:'🍷' }, { v:'caldera', label:'Caldera views', icon:'🌄' }, { v:'volcanic', label:'Volcano & hot springs', icon:'🌋' }],
     'Mykonos':             [{ v:'beaches', label:'Beach clubs', icon:'🏖️' }, { v:'seafood', label:'Fresh seafood', icon:'🦞' }, { v:'hora', label:'Hora & Little Venice', icon:'🛶' }],
+    'Stockholm':           [{ v:'archipelago', label:'Archipelago islands', icon:'⛵' }, { v:'fika', label:'Fika & konditori', icon:'☕' }, { v:'design', label:'Nordic design', icon:'🪑' }],
   };
 
   const LOADING_MSGS = {
@@ -680,6 +766,7 @@
     'Athens':              ['Finding the 8am Acropolis route…','Sourcing the best souvlaki…','Mapping the Exarcheia neighbourhood…'],
     'Santorini':           ['Finding the Imerovigli sunset spot…','Sourcing the Assyrtiko wine…','Booking the caldera boat trip…'],
     'Mykonos':             ['Finding the best beach club…','Mapping the Hora backstreets…','Sourcing the freshest seafood…'],
+    'Stockholm':           ['Checking the archipelago ferry schedule…','Finding the best kanelbulle in Södermalm…','Mapping the T-bana art galleries…'],
     'default':             ['Consulting our local contacts…','Finding the places worth your time…','Curating your experience…'],
   };
 
@@ -1072,6 +1159,16 @@
     document.getElementById('itinOutput').style.display = 'block';
     document.getElementById('itinOutput').scrollIntoView({ behavior: 'smooth' });
 
+    // Reset donation block on each render
+    selectedTier = null;
+    [1, 2, 3].forEach(t => { const el = document.getElementById('tier' + t); if (el) el.classList.remove('active'); });
+    document.getElementById('donationOpenRow').classList.remove('visible');
+    document.getElementById('btnDonateRazorpay').classList.remove('visible');
+    document.getElementById('donationPaypalLinks').classList.remove('visible');
+    document.getElementById('donationSuccess').style.display = 'none';
+    document.getElementById('donationTiers').style.opacity = '1';
+    detectDonationGateway();
+
     // ── Update URL to shareable link if slug exists ───────────────
     if (data.slug) {
       window.history.replaceState({}, '', `/itinerary/${data.slug}`);
@@ -1215,6 +1312,150 @@
       document.getElementById('formSection').style.display = 'block';
       return false;
     }
+  }
+
+  // ── DONATION SYSTEM ──────────────────────────────────────────────
+  // India (IP detected) → Razorpay ₹. International → PayPal $.
+  // ⚠️ Replace PAYPAL_ME_BASE with your actual PayPal.me link before going live.
+  const PAYPAL_ME_BASE = "https://paypal.me/YOUR_PAYPAL_HANDLE"; // ← replace this
+
+  const DONATION_TIERS = {
+    INR: { t1: 99,  t2: 249, currency: '₹', label: 'INR' },
+    USD: { t1: 1,   t2: 3,   currency: '$', label: 'USD' },
+  };
+
+  let donationGateway = 'INR';
+  let selectedTier = null;
+
+  async function detectDonationGateway() {
+    try {
+      const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) });
+      const data = await res.json();
+      donationGateway = (data.country_code === 'IN') ? 'INR' : 'USD';
+    } catch {
+      donationGateway = 'USD';
+    }
+    renderDonationUI();
+  }
+
+  function renderDonationUI() {
+    const cfg = DONATION_TIERS[donationGateway];
+    const isIndia = donationGateway === 'INR';
+    document.getElementById('tier1Amount').textContent = `${cfg.currency}${cfg.t1}`;
+    document.getElementById('tier2Amount').textContent = `${cfg.currency}${cfg.t2}`;
+    document.getElementById('tier1AmountSec').textContent = isIndia ? '~$1' : '~₹83';
+    document.getElementById('tier2AmountSec').textContent = isIndia ? '~$3' : '~₹249';
+    document.getElementById('donationCurrencyLabel').textContent = cfg.currency;
+    document.getElementById('btnDonateRazorpay').classList.toggle('visible', false);
+    document.getElementById('donationPaypalLinks').classList.toggle('visible', false);
+    document.getElementById('donationGatewayNote').textContent = isIndia
+      ? 'Powered by Razorpay · Secure · Takes 30 seconds'
+      : 'Powered by PayPal · Opens in a new tab · No account needed';
+  }
+
+  function selectTier(tier) {
+    selectedTier = tier;
+    [1, 2, 3].forEach(t => document.getElementById('tier' + t).classList.toggle('active', t === tier));
+    const cfg = DONATION_TIERS[donationGateway];
+    const isIndia = donationGateway === 'INR';
+    const openRow = document.getElementById('donationOpenRow');
+    const razBtn = document.getElementById('btnDonateRazorpay');
+    const paypalLinks = document.getElementById('donationPaypalLinks');
+    const paypalBtn = document.getElementById('btnPaypalTier');
+    openRow.classList.toggle('visible', tier === 3);
+    if (isIndia) {
+      razBtn.classList.add('visible');
+      paypalLinks.classList.remove('visible');
+      if (tier === 1) razBtn.textContent = `Support with ${cfg.currency}${cfg.t1} →`;
+      else if (tier === 2) razBtn.textContent = `Support with ${cfg.currency}${cfg.t2} →`;
+      else razBtn.textContent = 'Support Rome Curator →';
+    } else {
+      razBtn.classList.remove('visible');
+      paypalLinks.classList.add('visible');
+      if (tier === 1) { paypalBtn.href = `${PAYPAL_ME_BASE}/${cfg.t1}`; paypalBtn.textContent = `Support with ${cfg.currency}${cfg.t1} on PayPal →`; }
+      else if (tier === 2) { paypalBtn.href = `${PAYPAL_ME_BASE}/${cfg.t2}`; paypalBtn.textContent = `Support with ${cfg.currency}${cfg.t2} on PayPal →`; }
+      else { paypalBtn.href = PAYPAL_ME_BASE; paypalBtn.textContent = 'Choose your amount on PayPal →'; }
+    }
+    if (window.posthog) posthog.capture('donation_initiated', {
+      tier, gateway: isIndia ? 'razorpay' : 'paypal',
+      amount: tier === 1 ? cfg.t1 : tier === 2 ? cfg.t2 : null,
+      currency: cfg.label, city: lastParams?.city,
+    });
+  }
+
+  function trackPaypalDonation() {
+    const cfg = DONATION_TIERS[donationGateway];
+    if (window.posthog) posthog.capture('donation_completed', {
+      gateway: 'paypal', tier: selectedTier,
+      amount: selectedTier === 1 ? cfg.t1 : selectedTier === 2 ? cfg.t2 : null,
+      currency: cfg.label, city: lastParams?.city, note: 'paypal_click_only',
+    });
+  }
+
+  async function initRazorpayDonation() {
+    if (!selectedTier) { alert('Please select a support tier first.'); return; }
+    const cfg = DONATION_TIERS['INR'];
+    let amount;
+    if (selectedTier === 1) amount = cfg.t1;
+    else if (selectedTier === 2) amount = cfg.t2;
+    else {
+      amount = parseInt(document.getElementById('donationOpenAmount').value);
+      if (!amount || amount < 1) { alert('Please enter an amount.'); return; }
+      if (amount > 10000) { alert('Maximum donation is ₹10,000. Thank you!'); return; }
+    }
+    const btn = document.getElementById('btnDonateRazorpay');
+    btn.disabled = true; btn.textContent = 'Opening payment…';
+    try {
+      const orderRes = await fetch(`${BACKEND_URL}/create-razorpay-order`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.error || 'Order creation failed');
+      await loadRazorpaySDK();
+      const options = {
+        key: orderData.keyId, amount: orderData.amount, currency: orderData.currency,
+        name: 'Rome Curator', description: 'Support independent travel curation',
+        order_id: orderData.orderId, theme: { color: '#B85C38' },
+        modal: { ondismiss: () => { btn.disabled = false; btn.textContent = selectedTier === 1 ? `Support with ₹${cfg.t1} →` : selectedTier === 2 ? `Support with ₹${cfg.t2} →` : 'Support Rome Curator →'; } },
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch(`${BACKEND_URL}/verify-razorpay-payment`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature }),
+            });
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok) throw new Error(verifyData.error || 'Verification failed');
+            document.getElementById('donationSuccess').style.display = 'block';
+            document.getElementById('donationTiers').style.opacity = '0.5';
+            btn.style.display = 'none';
+            if (window.posthog) posthog.capture('donation_completed', { gateway: 'razorpay', tier: selectedTier, amount, currency: 'INR', city: lastParams?.city, payment_id: response.razorpay_payment_id });
+          } catch (verifyErr) {
+            console.error('[payment] Verification error:', verifyErr.message);
+            alert('Payment received but verification had an issue. Please contact hello@romecurator.com with your payment ID: ' + response.razorpay_payment_id);
+          }
+        },
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+      btn.disabled = false;
+    } catch (err) {
+      console.error('[payment] Razorpay error:', err.message);
+      btn.disabled = false;
+      btn.textContent = selectedTier === 1 ? `Support with ₹${cfg.t1} →` : selectedTier === 2 ? `Support with ₹${cfg.t2} →` : 'Support Rome Curator →';
+      alert('Could not open payment. Please try again.');
+    }
+  }
+
+  function loadRazorpaySDK() {
+    return new Promise((resolve, reject) => {
+      if (window.Razorpay) { resolve(); return; }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+      document.head.appendChild(script);
+    });
   }
 
   buildGrids(); onCityChange(); updateDuration();
