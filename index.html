@@ -774,6 +774,7 @@
   let itinerary = null;
   let msgTimer = null;
   let lastParams = null;
+  let lastRequestId = null;
 
   // ── Interest grids ────────────────────────────────────────────
   function chip(d, isCity) {
@@ -830,7 +831,9 @@
 
   const MAX_CITIES = 4;
   const MAX_DAYS_SINGLE = 4;
-  const MAX_DAYS_MULTI = 14;
+  const MAX_DAYS_MULTI = 10;
+  const MIN_DAYS_MULTI = 6;   // 2-3 cities
+  const MIN_DAYS_4_CITY = 9;  // 4 cities — 9 days / 8 nights, ~2 nights per city
 
   function onCityCheckboxChange() {
     const cities = getSelectedCities();
@@ -842,7 +845,7 @@
     const allBoxes = document.querySelectorAll('#cityCheckboxes input[type="checkbox"]');
     if (cities.length >= MAX_CITIES) {
       allBoxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
-      hint.textContent = '· max 4 cities selected';
+      hint.textContent = `· max 4 cities · min ${MIN_DAYS_4_CITY} days`;
       hint.style.display = 'inline';
     } else if (cities.length > 1) {
       allBoxes.forEach(cb => { cb.disabled = false; });
@@ -854,10 +857,12 @@
     }
 
     if (cities.length > 1) {
-      // Multi-city: min 6 days, max 14
-      daysInput.min = 6;
+      // Multi-city: min scales with city count — 2-3 cities: min 6.
+      // 4 cities: min 9 (9 days / 8 nights, ~2 nights per city floor).
+      const minDays = cities.length >= MAX_CITIES ? MIN_DAYS_4_CITY : MIN_DAYS_MULTI;
+      daysInput.min = minDays;
       daysInput.max = MAX_DAYS_MULTI;
-      if (currentDays < 6) { daysInput.value = 6; updateDuration(); }
+      if (currentDays < minDays) { daysInput.value = minDays; updateDuration(); }
       if (currentDays > MAX_DAYS_MULTI) { daysInput.value = MAX_DAYS_MULTI; updateDuration(); }
     } else {
       // Single city: min 1, max 4
@@ -969,7 +974,8 @@
     const city = isMultiCity ? selectedCities.join(' + ') : selectedCities[0];
     if (isMultiCity) {
       const daysInput = document.getElementById('days');
-      if (parseInt(daysInput.value) < 6) { daysInput.value = 6; updateDuration(); }
+      const minDays = selectedCities.length >= MAX_CITIES ? MIN_DAYS_4_CITY : MIN_DAYS_MULTI;
+      if (parseInt(daysInput.value) < minDays) { daysInput.value = minDays; updateDuration(); }
     }
     const days = parseInt(document.getElementById('days').value) || 4;
     const pace = document.getElementById('pace').value;
@@ -1019,7 +1025,7 @@
     if (timeHint) {
       if (days <= 3) timeHint.textContent = 'Usually ready in 20–35 seconds.';
       else if (days <= 7) timeHint.textContent = 'Usually ready in 35–60 seconds.';
-      else timeHint.textContent = 'Usually takes 60–90 seconds for longer trips — worth the wait.';
+      else timeHint.textContent = 'Longer trips build in stages — your first days appear within 30–40 seconds, the rest follows shortly after.';
     }
 
     const msgs = LOADING_MSGS[city] || LOADING_MSGS['default'];
@@ -1030,12 +1036,41 @@
     await callGenerate(city, days, pace, month, travelStyle, budget, interests, selectedCities, isMultiCity);
   }
 
-  async function callGenerate(city, days, pace, month, travelStyle, budget, interests, cities, isMultiCity) {
+  // Tracks whether the tab was backgrounded during the current generation,
+  // purely to show a calmer message — the request itself isn't affected.
+  let tabWasBackgrounded = false;
+  function handleVisibilityChange() {
+    if (document.hidden && document.getElementById('loadingState').style.display === 'block') {
+      tabWasBackgrounded = true;
+    } else if (!document.hidden && tabWasBackgrounded) {
+      const lm = document.getElementById('loadingMsg');
+      if (lm && document.getElementById('loadingState').style.display === 'block') {
+        lm.textContent = 'Still here — picking up where we left off…';
+      }
+    }
+  }
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  function generateRequestId() {
+    return 'req_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+  }
+
+  async function callGenerate(city, days, pace, month, travelStyle, budget, interests, cities, isMultiCity, existingRequestId) {
+    const requestId = existingRequestId || generateRequestId();
+    lastRequestId = requestId; // stored on lastParams-level scope for retry/resume
+    tabWasBackgrounded = false;
+    // Clear any leftover day cards from a previous trip. Skipped when
+    // resuming the SAME requestId (retry after a dropped connection),
+    // since those cards may already reflect real progress worth keeping —
+    // tryRecoverProgress will reconcile from the backend if needed.
+    if (!existingRequestId) {
+      document.getElementById('daysWrap').innerHTML = '';
+    }
     try {
       const res = await fetch(`${BACKEND_URL}/generate-itinerary-stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city, cities, isMultiCity, days, pace, month, travelStyle, budget, interests }),
+        body: JSON.stringify({ city, cities, isMultiCity, days, pace, month, travelStyle, budget, interests, requestId }),
       });
 
       if (!res.ok) {
@@ -1071,6 +1106,12 @@
                 ? `Built ${built} of ${days} days…`
                 : document.getElementById('loadingMsg').textContent;
             }
+          } else if (event.type === 'chunk_done') {
+            // A batch of days finished — render them immediately rather than
+            // waiting for the whole trip. Makes long itineraries feel much faster.
+            appendDayCards(event.days || []);
+            document.getElementById('loadingMsg').textContent =
+              `${event.daysCompleted} of ${event.totalDays} days ready…`;
           } else if (event.type === 'done') {
             clearInterval(msgTimer);
             itinerary = event.itinerary;
@@ -1097,10 +1138,74 @@
       }
     } catch (err) {
       clearInterval(msgTimer);
+      // ── Before showing a hard error, check if the backend actually
+      // finished (or got partway) despite the connection dropping —
+      // common after a tab-switch. Recover instead of wasting the work.
+      const recovered = await tryRecoverProgress(requestId, city, days, pace, month, interests, isMultiCity);
+      if (recovered) return;
+
       document.getElementById('loadingState').style.display = 'none';
       const eb = document.getElementById('errorBox');
       eb.style.display = 'block';
       document.getElementById('errorMsg').textContent = `Something went wrong: ${err.message}. Please try again.`;
+    }
+  }
+
+  // ── Attempt to recover an interrupted generation via requestId ─────
+  // Returns true if it successfully recovered something renderable.
+  async function tryRecoverProgress(requestId, city, days, pace, month, interests, isMultiCity) {
+    if (!requestId) return false;
+    try {
+      const res = await fetch(`${BACKEND_URL}/itinerary-progress/${requestId}`);
+      if (!res.ok) return false;
+      const progress = await res.json();
+
+      if (progress.status === 'done' && progress.days?.length) {
+        const finalItinerary = { title: progress.title, meta: progress.meta, days: progress.days, slug: progress.slug };
+        itinerary = finalItinerary;
+        renderOutput(finalItinerary, city, days, pace, lastParams?.month);
+        if (window.posthog) posthog.capture('itinerary_generated', {
+          city, cities: lastParams?.cities || [city], is_multi_city: !!isMultiCity,
+          days, pace, month: lastParams?.month, travel_style: lastParams?.travelStyle,
+          budget: lastParams?.budget, interests, from_cache: false, recovered: true,
+        });
+        return true;
+      }
+
+      if (progress.status === 'in_progress' && progress.days?.length > 0) {
+        // Partial progress exists — show what we have, then re-poll a few
+        // times before giving up (covers "still generating server-side"
+        // right after a reconnect).
+        appendDayCards(progress.days);
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('itinOutput').style.display = 'block';
+        document.getElementById('loadingMsg').textContent = `${progress.days.length} of ${progress.totalDays} days ready — finishing up…`;
+
+        for (let attempt = 0; attempt < 10; attempt++) {
+          await new Promise(r => setTimeout(r, 3000));
+          const pollRes = await fetch(`${BACKEND_URL}/itinerary-progress/${requestId}`);
+          if (!pollRes.ok) continue;
+          const polled = await pollRes.json();
+          const newDays = polled.days.slice(progress.days.length);
+          if (newDays.length > 0) {
+            appendDayCards(newDays);
+            progress.days = polled.days;
+            document.getElementById('loadingMsg').textContent = `${polled.days.length} of ${polled.totalDays} days ready…`;
+          }
+          if (polled.status === 'done') {
+            const finalItinerary = { title: polled.title, meta: polled.meta, days: polled.days, slug: polled.slug };
+            itinerary = finalItinerary;
+            renderOutput(finalItinerary, city, days, pace, lastParams?.month);
+            return true;
+          }
+          if (polled.status === 'error') break;
+        }
+        return false; // fell through without finishing — let caller show error
+      }
+
+      return false; // no usable progress (status was 'error', or nothing generated yet)
+    } catch {
+      return false;
     }
   }
 
@@ -1114,7 +1219,58 @@
     let mi = 0;
     document.getElementById('loadingMsg').textContent = msgs[0];
     msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
-    await callGenerate(city, days, pace, month, travelStyle, budget, interests, cities, isMultiCity);
+    // Pass the previous requestId through — if the backend already made
+    // progress (or finished) before the connection dropped, we recover
+    // it instead of regenerating the whole trip from scratch.
+    await callGenerate(city, days, pace, month, travelStyle, budget, interests, cities, isMultiCity, lastRequestId);
+  }
+
+  // ── Build a single day card DOM element ───────────────────────
+  function buildDayCard(day, i) {
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    const slots = [['Morning',day.morning],['Afternoon',day.afternoon],['Evening',day.evening]];
+    const sHTML = slots.map(([lbl,items]) => `
+      <div class="time-block">
+        <div class="time-label">${lbl}</div>
+        <ul class="act-list">${(items||[]).map(it=>`<li class="act-item"><span class="act-dot"></span><span>${it}</span></li>`).join('')}</ul>
+      </div>`).join('');
+    card.innerHTML = `
+      <div class="day-hd" onclick="toggleDay(${i})">
+        <div class="day-num">${day.day}</div>
+        <div class="day-info">
+          <div class="day-title">${day.title}</div>
+          <div class="day-why">${day.why}</div>
+        </div>
+        <div class="day-chev" id="chev${i}">▾</div>
+      </div>
+      <div class="day-bd" id="bd${i}">
+        ${sHTML}
+        <div class="refine-bar">
+          <input class="refine-inp" type="text" placeholder="Refine this day… e.g. 'skip museums, more food'" id="ri${i}" />
+          <button class="btn-refine" onclick="refine(${i},${day.day})">Refine ↻</button>
+        </div>
+      </div>`;
+    return card;
+  }
+
+  // ── Append new day cards as a chunk completes (progressive render) ──
+  // Used while streaming is still in progress — does NOT touch title/meta/
+  // weather/donation block, those are only finalised by renderOutput().
+  function appendDayCards(newDays) {
+    const wrap = document.getElementById('daysWrap');
+    const startIndex = wrap.querySelectorAll('.day-card').length;
+    newDays.forEach((day, j) => {
+      const i = startIndex + j;
+      wrap.appendChild(buildDayCard(day, i));
+    });
+    // Reveal the output section as soon as the first days exist, and open day 1
+    if (startIndex === 0 && newDays.length > 0) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('itinOutput').style.display = 'block';
+      document.getElementById('itinOutput').scrollIntoView({ behavior: 'smooth' });
+      toggleDay(0);
+    }
   }
 
   function renderOutput(data, city, days, pace, month) {
@@ -1126,37 +1282,17 @@
       document.getElementById('iWeather').textContent = `🌡 ${MONTH_NAMES[month]} in ${city}: ${weatherData[month-1]}`;
     }
 
+    // If days were already appended progressively during streaming, don't
+    // wipe and rebuild — just ensure the DOM matches the final day list
+    // (covers both the chunked path and the plain non-chunked path, where
+    // no days exist yet at this point and we render them all here).
     const wrap = document.getElementById('daysWrap');
-    wrap.innerHTML = '';
-    (data.days || []).forEach((day, i) => {
-      const card = document.createElement('div');
-      card.className = 'day-card';
-      const slots = [['Morning',day.morning],['Afternoon',day.afternoon],['Evening',day.evening]];
-      const sHTML = slots.map(([lbl,items]) => `
-        <div class="time-block">
-          <div class="time-label">${lbl}</div>
-          <ul class="act-list">${(items||[]).map(it=>`<li class="act-item"><span class="act-dot"></span><span>${it}</span></li>`).join('')}</ul>
-        </div>`).join('');
-      card.innerHTML = `
-        <div class="day-hd" onclick="toggleDay(${i})">
-          <div class="day-num">${day.day}</div>
-          <div class="day-info">
-            <div class="day-title">${day.title}</div>
-            <div class="day-why">${day.why}</div>
-          </div>
-          <div class="day-chev" id="chev${i}">▾</div>
-        </div>
-        <div class="day-bd" id="bd${i}">
-          ${sHTML}
-          <div class="refine-bar">
-            <input class="refine-inp" type="text" placeholder="Refine this day… e.g. 'skip museums, more food'" id="ri${i}" />
-            <button class="btn-refine" onclick="refine(${i},${day.day})">Refine ↻</button>
-          </div>
-        </div>`;
-      wrap.appendChild(card);
-    });
+    const alreadyRendered = wrap.querySelectorAll('.day-card').length;
+    if (alreadyRendered === 0) {
+      (data.days || []).forEach((day, i) => wrap.appendChild(buildDayCard(day, i)));
+      toggleDay(0);
+    }
 
-    toggleDay(0);
     document.getElementById('itinOutput').style.display = 'block';
     document.getElementById('itinOutput').scrollIntoView({ behavior: 'smooth' });
 
