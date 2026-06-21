@@ -87,6 +87,11 @@
     .section-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0 11px; }
     .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--parchment); }
     .section-divider span { font-size: 10px; color: var(--stone); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; }
+    .city-specials-group { margin-bottom: 10px; }
+    .city-specials-label { font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--terracotta); margin-bottom: 6px; }
+    .city-specials-row { margin-bottom: 0; }
+    .interest-limit-msg { font-size: 11px; color: var(--terracotta); margin-top: 8px; display: none; }
+    .interest-chip.disabled-cap { opacity: 0.4; cursor: not-allowed; }
 
     /* SAFETY NOTE */
     .safety-note { background: #FFF8F0; border: 1px solid #F0D5B8; border-radius: 4px; padding: 10px 14px; margin-top: 10px; font-size: 11px; color: var(--ink-mid); line-height: 1.6; display: none; }
@@ -156,6 +161,9 @@
     .day-chev.open { transform: rotate(180deg); }
     .day-bd { display: none; padding: 4px 32px 22px; }
     .day-bd.open { display: block; }
+    .generating-banner { display: flex; align-items: center; gap: 10px; padding: 16px 32px; margin: 0 0 8px; background: var(--parchment); border-top: 1px solid rgba(184,92,56,0.15); font-size: 13px; color: var(--ink-mid); font-style: italic; }
+    .generating-spinner { width: 13px; height: 13px; border: 2px solid rgba(184,92,56,0.25); border-top-color: var(--terracotta); border-radius: 50%; flex-shrink: 0; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .time-block { margin-bottom: 16px; }
     .time-label { font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--terracotta); margin-bottom: 9px; display: flex; align-items: center; gap: 8px; }
     .time-label::after { content: ''; flex: 1; height: 1px; background: var(--parchment); }
@@ -303,7 +311,7 @@
 
   <!-- HEADER -->
   <div class="header">
-    <div class="brand-lockup">
+    <div class="brand-lockup" onclick="restart()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();restart();}" role="button" tabindex="0" style="cursor:pointer;" title="Back to homepage">
       <div class="brand-icon">
         <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M10 2C10 2 4 6 4 11C4 14.31 6.69 17 10 17C13.31 17 16 14.31 16 11C16 6 10 2 10 2Z" fill="white" fill-opacity="0.9"/>
@@ -425,13 +433,14 @@
     <div style="margin-top:20px;">
       <div class="interests-label-row">
         <span class="interests-label">Your interests</span>
-        <span class="interests-hint">pick all that apply</span>
+        <span class="interests-hint">pick up to 5</span>
       </div>
       <div class="interest-grid" id="uGrid"></div>
       <div class="section-divider" id="cityDivider" style="display:none;">
         <span id="cityDividerLabel">Rome specials</span>
       </div>
       <div class="interest-grid" id="cGrid"></div>
+      <div class="interest-limit-msg" id="interestLimitMsg"></div>
     </div>
 
     <!-- Email capture - landing -->
@@ -484,7 +493,7 @@
   <!-- ITINERARY OUTPUT -->
   <div class="itinerary-output" id="itinOutput">
     <div class="itin-header">
-      <div class="itin-brand">
+      <div class="itin-brand" onclick="restart()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();restart();}" role="button" tabindex="0" style="cursor:pointer;" title="Back to homepage">
         <div class="itin-brand-icon">
           <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M10 2C10 2 4 6 4 11C4 14.31 6.69 17 10 17C13.31 17 16 14.31 16 11C16 6 10 2 10 2Z" fill="white" fill-opacity="0.7"/>
@@ -500,6 +509,10 @@
     </div>
 
     <div class="days-wrap" id="daysWrap"></div>
+    <div class="generating-banner" id="generatingBanner" style="display:none;">
+      <span class="generating-spinner"></span>
+      <span id="generatingBannerText">Building the rest of your trip…</span>
+    </div>
 
     <!-- DONATION BLOCK — after day cards, before email save form -->
     <div class="donation-section" id="donationSection">
@@ -575,6 +588,7 @@
       <p class="footer-note">Take this to your booking provider — flights, stays, transport.</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
         <button class="btn-restart" id="btnShare" onclick="copyShareLink()">🔗 Share itinerary</button>
+        <button class="btn-restart" id="btnDownloadPdf" onclick="downloadItineraryPdf()">📄 Download PDF</button>
         <button class="btn-restart" onclick="restart()">← Plan another trip</button>
       </div>
     </div>
@@ -777,16 +791,73 @@
   let lastRequestId = null;
 
   // ── Interest grids ────────────────────────────────────────────
-  function chip(d, isCity) {
-    return `<div class="interest-chip${isCity?' city-chip':''}" data-v="${d.v}">
+  const MAX_INTERESTS_UNIVERSAL = 5;   // "Your interests" — independent cap
+  const MAX_SPECIALS_PER_CITY = 2;     // each selected city's specials — own independent cap, additive across cities
+
+  function chip(d, isCity, cityName) {
+    return `<div class="interest-chip${isCity?' city-chip':''}" data-v="${d.v}"${isCity && cityName ? ` data-city="${cityName}"` : ''}>
       <span class="chip-icon">${d.icon}</span>${d.label}${isCity?`<span class="city-tag">local</span>`:''}
     </div>`;
+  }
+
+  // Shared click handler for both the universal grid and city-specials grid.
+  // Caps are scoped independently:
+  // - Universal ("Your interests"): max 5, checked only against #uGrid.
+  // - Each city's specials: max 2, checked only against that city's own
+  //   group — picking 2 from Tokyo doesn't affect Kyoto's allowance.
+  function toggleInterestChip(chipEl) {
+    const isActive = chipEl.classList.contains('active');
+    if (!isActive) {
+      const cityName = chipEl.dataset.city;
+      let scopeCount, scopeLimit;
+      if (cityName) {
+        scopeCount = document.querySelectorAll(`#cGrid .interest-chip.active[data-city="${cityName}"]`).length;
+        scopeLimit = MAX_SPECIALS_PER_CITY;
+      } else {
+        scopeCount = document.querySelectorAll('#uGrid .interest-chip.active').length;
+        scopeLimit = MAX_INTERESTS_UNIVERSAL;
+      }
+      if (scopeCount >= scopeLimit) {
+        const msg = document.getElementById('interestLimitMsg');
+        msg.textContent = cityName
+          ? `You've picked ${scopeLimit} for ${cityName} — unselect one to swap it for another.`
+          : `You've picked ${scopeLimit} — that's plenty to work with. Unselect one to swap it for another.`;
+        msg.style.display = 'block';
+        clearTimeout(msg._hideTimer);
+        msg._hideTimer = setTimeout(() => { msg.style.display = 'none'; }, 2500);
+        return;
+      }
+    }
+    chipEl.classList.toggle('active');
+    refreshInterestCapVisuals();
+  }
+
+  // Visually grey out unselected chips once their own scope's cap is hit —
+  // universal chips grey out only when the universal cap is reached; a
+  // given city's chips grey out only when THAT city's cap is reached.
+  function refreshInterestCapVisuals() {
+    const uChips = [...document.querySelectorAll('#uGrid .interest-chip')];
+    const uActive = uChips.filter(c => c.classList.contains('active')).length;
+    const uAtCap = uActive >= MAX_INTERESTS_UNIVERSAL;
+    uChips.forEach(c => { if (!c.classList.contains('active')) c.classList.toggle('disabled-cap', uAtCap); });
+
+    const cityNames = new Set([...document.querySelectorAll('#cGrid .interest-chip[data-city]')].map(c => c.dataset.city));
+    let anyCityAtCap = false;
+    cityNames.forEach(cityName => {
+      const cChips = [...document.querySelectorAll(`#cGrid .interest-chip[data-city="${cityName}"]`)];
+      const cActive = cChips.filter(c => c.classList.contains('active')).length;
+      const cAtCap = cActive >= MAX_SPECIALS_PER_CITY;
+      if (cAtCap) anyCityAtCap = true;
+      cChips.forEach(c => { if (!c.classList.contains('active')) c.classList.toggle('disabled-cap', cAtCap); });
+    });
+
+    if (!uAtCap && !anyCityAtCap) document.getElementById('interestLimitMsg').style.display = 'none';
   }
 
   function buildGrids() {
     const uG = document.getElementById('uGrid');
     uG.innerHTML = UNIVERSAL.map(d => chip(d, false)).join('');
-    uG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
+    uG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => toggleInterestChip(c)));
     refreshCityGrid();
   }
 
@@ -899,19 +970,48 @@
 
   function refreshCityGrid() {
     const cities = getSelectedCities();
-    const city = cities[0] || null;
-    const specials = CITY_SPECIALS[city] || [];
     const cG = document.getElementById('cGrid');
     const div = document.getElementById('cityDivider');
-    document.getElementById('cityDividerLabel').textContent = city ? `${city} specials` : 'City specials';
-    if (specials.length) {
-      div.style.display = 'flex';
-      cG.innerHTML = specials.map(d => chip(d, true)).join('');
-      cG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
-    } else {
+    const label = document.getElementById('cityDividerLabel');
+
+    if (!cities.length) {
       div.style.display = 'none';
       cG.innerHTML = '';
+      return;
     }
+
+    // Only show as many specials chips as the cap allows — no point
+    // displaying a 3rd chip for a city when only 2 can ever be active.
+    const sections = cities
+      .map(city => ({ city, specials: (CITY_SPECIALS[city] || []).slice(0, MAX_SPECIALS_PER_CITY) }))
+      .filter(s => s.specials.length > 0);
+
+    if (!sections.length) {
+      div.style.display = 'none';
+      cG.innerHTML = '';
+      return;
+    }
+
+    div.style.display = 'flex';
+    label.textContent = cities.length > 1 ? `City specials · pick up to ${MAX_SPECIALS_PER_CITY} per city` : `${cities[0]} specials · pick up to ${MAX_SPECIALS_PER_CITY}`;
+
+    // Multi-city: render a small sub-label per city so it's clear which
+    // chips belong to which destination. Single-city: flat grid as before.
+    // Each chip carries data-city so the per-city cap can be enforced
+    // independently of other cities and of the universal interests grid.
+    if (cities.length > 1) {
+      cG.innerHTML = sections.map(({ city, specials }) => `
+        <div class="city-specials-group" data-city="${city}">
+          <div class="city-specials-label">${city}</div>
+          <div class="interest-grid city-specials-row">${specials.map(d => chip(d, true, city)).join('')}</div>
+        </div>
+      `).join('');
+    } else {
+      cG.innerHTML = `<div data-city="${cities[0]}">${sections.map(s => s.specials.map(d => chip(d, true, s.city)).join('')).join('')}</div>`;
+    }
+
+    cG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => toggleInterestChip(c)));
+    refreshInterestCapVisuals();
   }
 
   function onCityChange(cityOverride) {
@@ -948,7 +1048,8 @@
   }
 
   function selectedInterests() {
-    return [...document.querySelectorAll('#uGrid .interest-chip.active, #cGrid .interest-chip.active')].map(c => c.dataset.v);
+    const vals = [...document.querySelectorAll('#uGrid .interest-chip.active, #cGrid .interest-chip.active')].map(c => c.dataset.v);
+    return [...new Set(vals)]; // dedupe — different cities can share the same special value (e.g. 'seafood')
   }
 
   // ── Email save (calls backend — no Sheetdb URL in frontend) ──
@@ -1065,6 +1166,7 @@
     // tryRecoverProgress will reconcile from the backend if needed.
     if (!existingRequestId) {
       document.getElementById('daysWrap').innerHTML = '';
+      hideGeneratingBanner();
     }
     try {
       const res = await fetch(`${BACKEND_URL}/generate-itinerary-stream`, {
@@ -1110,10 +1212,10 @@
             // A batch of days finished — render them immediately rather than
             // waiting for the whole trip. Makes long itineraries feel much faster.
             appendDayCards(event.days || []);
-            document.getElementById('loadingMsg').textContent =
-              `${event.daysCompleted} of ${event.totalDays} days ready…`;
+            updateGeneratingBanner(event.daysCompleted, event.totalDays);
           } else if (event.type === 'done') {
             clearInterval(msgTimer);
+            hideGeneratingBanner();
             itinerary = event.itinerary;
             const month2 = lastParams?.month;
             // ── PostHog: itinerary generated ──
@@ -1147,7 +1249,13 @@
       document.getElementById('loadingState').style.display = 'none';
       const eb = document.getElementById('errorBox');
       eb.style.display = 'block';
-      document.getElementById('errorMsg').textContent = `Something went wrong: ${err.message}. Please try again.`;
+      // Backend error messages already end with their own "Please try again" —
+      // don't wrap with another one. Only add a generic suffix for raw/network
+      // errors that don't already read as a complete sentence.
+      const msg = err.message || 'Unknown error';
+      document.getElementById('errorMsg').textContent = /please try again/i.test(msg)
+        ? msg
+        : `Something went wrong: ${msg}. Please try again.`;
     }
   }
 
@@ -1177,9 +1285,8 @@
         // times before giving up (covers "still generating server-side"
         // right after a reconnect).
         appendDayCards(progress.days);
-        document.getElementById('loadingState').style.display = 'block';
         document.getElementById('itinOutput').style.display = 'block';
-        document.getElementById('loadingMsg').textContent = `${progress.days.length} of ${progress.totalDays} days ready — finishing up…`;
+        updateGeneratingBanner(progress.days.length, progress.totalDays);
 
         for (let attempt = 0; attempt < 10; attempt++) {
           await new Promise(r => setTimeout(r, 3000));
@@ -1190,9 +1297,10 @@
           if (newDays.length > 0) {
             appendDayCards(newDays);
             progress.days = polled.days;
-            document.getElementById('loadingMsg').textContent = `${polled.days.length} of ${polled.totalDays} days ready…`;
+            updateGeneratingBanner(polled.days.length, polled.totalDays);
           }
           if (polled.status === 'done') {
+            hideGeneratingBanner();
             const finalItinerary = { title: polled.title, meta: polled.meta, days: polled.days, slug: polled.slug };
             itinerary = finalItinerary;
             renderOutput(finalItinerary, city, days, pace, lastParams?.month);
@@ -1235,12 +1343,17 @@
         <div class="time-label">${lbl}</div>
         <ul class="act-list">${(items||[]).map(it=>`<li class="act-item"><span class="act-dot"></span><span>${it}</span></li>`).join('')}</ul>
       </div>`).join('');
+    // Defensive fallbacks — a model occasionally omits a field on later chunks
+    // of long generations. Better to show nothing/sensible default than the
+    // literal string "undefined" leaking into the UI.
+    const dayTitle = day.title || `Day ${day.day}`;
+    const dayWhy = day.why || '';
     card.innerHTML = `
       <div class="day-hd" onclick="toggleDay(${i})">
         <div class="day-num">${day.day}</div>
         <div class="day-info">
-          <div class="day-title">${day.title}</div>
-          <div class="day-why">${day.why}</div>
+          <div class="day-title">${dayTitle}</div>
+          ${dayWhy ? `<div class="day-why">${dayWhy}</div>` : ''}
         </div>
         <div class="day-chev" id="chev${i}">▾</div>
       </div>
@@ -1252,6 +1365,27 @@
         </div>
       </div>`;
     return card;
+  }
+
+  // ── Generating-more-days banner ─────────────────────────────────
+  // appendDayCards hides the (separate) loadingState as soon as the first
+  // chunk renders, so on a multi-chunk trip the user is left looking at a
+  // finished-looking page with no sign that more days are still coming —
+  // exactly what was confusing users on 8+ day trips. This banner lives
+  // inside the always-visible output area so progress stays visible
+  // regardless of how many chunks are still in flight.
+  function updateGeneratingBanner(daysCompleted, totalDays) {
+    const banner = document.getElementById('generatingBanner');
+    const text = document.getElementById('generatingBannerText');
+    if (daysCompleted >= totalDays) {
+      banner.style.display = 'none';
+      return;
+    }
+    text.textContent = `Day${totalDays - daysCompleted > 1 ? 's' : ''} ${daysCompleted + 1}–${totalDays} are being curated now — they'll appear below shortly…`;
+    banner.style.display = 'flex';
+  }
+  function hideGeneratingBanner() {
+    document.getElementById('generatingBanner').style.display = 'none';
   }
 
   // ── Append new day cards as a chunk completes (progressive render) ──
@@ -1405,9 +1539,91 @@
     document.getElementById('emailPostSection').style.opacity = '1';
     document.getElementById('btnSavePost').disabled = false;
     document.getElementById('btnSavePost').textContent = 'Save my itinerary ✓';
+    hideGeneratingBanner();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // Clear slug from URL
     window.history.replaceState({}, '', '/');
+  }
+
+  // ── Download PDF ────────────────────────────────────────────────
+  let html2pdfLoadPromise = null;
+  function loadHtml2Pdf() {
+    if (window.html2pdf) return Promise.resolve();
+    if (html2pdfLoadPromise) return html2pdfLoadPromise;
+    html2pdfLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Could not load PDF library. Check your connection and try again.'));
+      document.head.appendChild(script);
+    });
+    return html2pdfLoadPromise;
+  }
+
+  async function downloadItineraryPdf() {
+    const btn = document.getElementById('btnDownloadPdf');
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Preparing PDF…';
+    let clone = null;
+
+    try {
+      await loadHtml2Pdf();
+
+      const sourceEl = document.getElementById('itinOutput');
+      if (!sourceEl) throw new Error('No itinerary to export.');
+
+      // Clone rather than touch the live DOM — the export needs every day
+      // expanded and the interactive/monetisation UI removed, but the
+      // user's actual page (open/closed accordion state, donation block,
+      // etc.) should be left exactly as they had it.
+      clone = sourceEl.cloneNode(true);
+      clone.querySelectorAll('.refine-bar').forEach(el => el.remove());
+      clone.querySelectorAll('#donationSection, .donation-section').forEach(el => el.remove());
+      clone.querySelectorAll('#emailPostSection, .email-post-section').forEach(el => el.remove());
+      const footer = clone.querySelector('.itin-footer');
+      if (footer) footer.remove(); // share/download/restart buttons don't belong in the PDF itself
+      // Force every day open and remove the click affordances (chevron,
+      // pointer cursor) since this is now a static document, not an
+      // interactive accordion.
+      clone.querySelectorAll('.day-bd').forEach(el => { el.style.display = 'block'; });
+      clone.querySelectorAll('.day-chev').forEach(el => { el.style.display = 'none'; });
+      clone.querySelectorAll('.day-hd').forEach(el => { el.style.cursor = 'default'; el.removeAttribute('onclick'); });
+
+      // Render off-screen so the user doesn't see a flash of unstyled/
+      // wide content while html2canvas captures it.
+      clone.style.position = 'fixed';
+      clone.style.top = '0';
+      clone.style.left = '-9999px';
+      clone.style.display = 'block';
+      clone.style.width = sourceEl.offsetWidth + 'px';
+      document.body.appendChild(clone);
+
+      const cityLabel = (lastParams?.city || itinerary?.title || 'itinerary').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
+      const filename = `rome-curator-${cityLabel || 'itinerary'}.pdf`;
+
+      await window.html2pdf().set({
+        margin: 10,
+        filename,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'avoid-all'], avoid: '.day-card' },
+      }).from(clone).save();
+
+      if (window.posthog) posthog.capture('pdf_downloaded', {
+        city: lastParams?.city,
+        days: lastParams?.days,
+        slug: itinerary?.slug,
+      });
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert(err.message || 'Could not create the PDF. Please try again.');
+    } finally {
+      if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+    }
   }
 
   // ── Share button ──────────────────────────────────────────────────
