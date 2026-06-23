@@ -307,6 +307,37 @@
       .interest-grid { grid-template-columns: repeat(2, 1fr); }
       .itin-title { font-size: 19px; }
     }
+
+    /* ── PRINT / "DOWNLOAD PDF" (window.print) ────────────────────────
+       Hides everything except the itinerary itself. downloadItineraryPdf()
+       force-opens every day (via the existing .open class mechanism) and
+       adds .pdf-print-mode to <body> right before calling window.print() —
+       this stylesheet only needs to handle visual hiding/cleanup, not the
+       accordion state itself. */
+    @media print {
+      .header, .form-section, .loading-state, .error-box,
+      .donation-section, .email-post-section, .itin-footer, .disclaimer,
+      .generating-banner, .refine-bar, .day-chev {
+        display: none !important;
+      }
+      body.pdf-print-mode .itinerary-output {
+        display: block !important;
+        box-shadow: none !important;
+      }
+      body.pdf-print-mode .day-bd {
+        display: block !important; /* belt-and-suspenders alongside the .open class the JS adds */
+      }
+      body.pdf-print-mode .day-hd {
+        cursor: default !important;
+      }
+      body.pdf-print-mode .itin-brand {
+        cursor: default !important;
+      }
+      body.pdf-print-mode .day-card {
+        break-inside: avoid; /* keep each day on one page where possible */
+        page-break-inside: avoid; /* older browser equivalent */
+      }
+    }
   </style>
 </head>
 <body>
@@ -1550,126 +1581,54 @@
     window.history.replaceState({}, '', '/');
   }
 
-  // ── Download PDF ────────────────────────────────────────────────
-  let html2pdfLoadPromise = null;
-  function loadHtml2Pdf() {
-    if (window.html2pdf) return Promise.resolve();
-    if (html2pdfLoadPromise) return html2pdfLoadPromise;
-    html2pdfLoadPromise = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      script.onload = resolve;
-      script.onerror = () => reject(new Error('Could not load PDF library. Check your connection and try again.'));
-      document.head.appendChild(script);
+  // ── Download PDF (browser-native print-to-PDF) ──────────────────────
+  // Switched away from html2canvas/html2pdf.js after repeated blank-output
+  // failures that couldn't be reliably diagnosed or fixed (see prior
+  // session notes) — that approach has a separate "capture" step that can
+  // silently fail in ways that don't surface as errors. This uses the
+  // browser's own print engine via window.print() + a @media print
+  // stylesheet instead: the same engine that already renders the page
+  // correctly does the PDF generation, so there's no separate capture
+  // step to fail. Trade-off: the user sees the OS print dialog and picks
+  // "Save as PDF" rather than getting an instant download — a real but
+  // acceptable UX difference given the reliability gain.
+  let printRestoreFn = null;
+  let printFallbackTimer = null;
+
+  function downloadItineraryPdf() {
+    const wrap = document.getElementById('daysWrap');
+    if (!wrap) return;
+
+    // Force every day open for printing, and remember which were already
+    // open so we can restore the user's actual accordion state afterward.
+    const bodies = [...wrap.querySelectorAll('.day-bd')];
+    const wasOpen = bodies.map(el => el.classList.contains('open'));
+    bodies.forEach(el => el.classList.add('open'));
+    document.body.classList.add('pdf-print-mode');
+
+    printRestoreFn = () => {
+      bodies.forEach((el, i) => { if (!wasOpen[i]) el.classList.remove('open'); });
+      document.body.classList.remove('pdf-print-mode');
+      printRestoreFn = null;
+    };
+
+    // afterprint covers the normal case (user saves or cancels the dialog).
+    // Some browsers (notably older Safari) don't fire it reliably, so a
+    // timeout fallback ensures the page never gets stuck with every day
+    // forced open if that event never arrives.
+    clearTimeout(printFallbackTimer);
+    printFallbackTimer = setTimeout(() => { if (printRestoreFn) printRestoreFn(); }, 60000);
+
+    if (window.posthog) posthog.capture('pdf_downloaded', {
+      city: lastParams?.city,
+      days: lastParams?.days,
+      slug: itinerary?.slug,
     });
-    return html2pdfLoadPromise;
+
+    window.print();
   }
 
-  async function downloadItineraryPdf() {
-    const btn = document.getElementById('btnDownloadPdf');
-    const originalLabel = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Preparing PDF…';
-    let clone = null;
-
-    try {
-      await loadHtml2Pdf();
-
-      const sourceEl = document.getElementById('itinOutput');
-      if (!sourceEl) throw new Error('No itinerary to export.');
-
-      // Clone rather than touch the live DOM — the export needs every day
-      // expanded and the interactive/monetisation UI removed, but the
-      // user's actual page (open/closed accordion state, donation block,
-      // etc.) should be left exactly as they had it.
-      clone = sourceEl.cloneNode(true);
-      // Strip the id immediately — cloneNode copies it verbatim, and this
-      // clone briefly lives in the real DOM alongside the original while
-      // html2canvas captures it. Two elements sharing id="itinOutput" at
-      // once would make every other getElementById('itinOutput') call in
-      // the codebase non-deterministic for that window.
-      clone.removeAttribute('id');
-      clone.querySelectorAll('.refine-bar').forEach(el => el.remove());
-      clone.querySelectorAll('#donationSection, .donation-section').forEach(el => el.remove());
-      clone.querySelectorAll('#emailPostSection, .email-post-section').forEach(el => el.remove());
-      const footer = clone.querySelector('.itin-footer');
-      if (footer) footer.remove(); // share/download/restart buttons don't belong in the PDF itself
-      // Force every day open and remove the click affordances (chevron,
-      // pointer cursor) since this is now a static document, not an
-      // interactive accordion.
-      clone.querySelectorAll('.day-bd').forEach(el => { el.style.display = 'block'; });
-      clone.querySelectorAll('.day-chev').forEach(el => { el.style.display = 'none'; });
-      clone.querySelectorAll('.day-hd').forEach(el => { el.style.cursor = 'default'; el.removeAttribute('onclick'); });
-
-      // Render in normal page flow, invisible via opacity rather than
-      // pushed off-screen or hidden. Two things to avoid here, both
-      // documented html2canvas failure modes that can produce a blank
-      // capture: (1) large negative offsets like left:-9999px — its
-      // internal scroll/viewport math doesn't reliably account for
-      // content far outside the visible area; (2) visibility:hidden or
-      // display:none — html2canvas's own source explicitly skips elements
-      // with either of those, same outcome as a true offscreen failure.
-      // opacity:0 keeps the element "visible" to the renderer (real
-      // layout, real dimensions, included in the render pass) while
-      // showing nothing to the user.
-      clone.style.position = 'absolute';
-      clone.style.top = '0';
-      clone.style.left = '0';
-      clone.style.zIndex = '-1';
-      clone.style.opacity = '0';
-      clone.style.pointerEvents = 'none';
-      clone.style.display = 'block';
-      clone.style.width = sourceEl.offsetWidth + 'px';
-      document.body.appendChild(clone);
-
-      const cityLabel = (lastParams?.city || itinerary?.title || 'itinerary').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
-      const filename = `rome-curator-${cityLabel || 'itinerary'}.pdf`;
-
-      await window.html2pdf().set({
-        margin: 10,
-        filename,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          // Belt-and-suspenders: html2canvas builds its OWN internal clone
-          // of whatever element we hand it. Force that internal clone back
-          // to fully visible/normal-positioned regardless of how our outer
-          // clone is styled — this is the documented, reliable fix for the
-          // "blank capture" failure mode (confirmed via html2canvas GitHub
-          // issues — elements with opacity/visibility/position tricks can
-          // render blank without this).
-          onclone: (clonedDoc, clonedEl) => {
-            // html2canvas calls onclone with (document, element) — the
-            // second argument is the cloned reference element directly,
-            // more reliable than guessing its position in the cloned body.
-            const el = clonedEl || clonedDoc.body.firstElementChild;
-            if (el) {
-              el.style.opacity = '1';
-              el.style.visibility = 'visible';
-              el.style.position = 'static';
-            }
-          },
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'avoid-all'], avoid: '.day-card' },
-      }).from(clone).save();
-
-      if (window.posthog) posthog.capture('pdf_downloaded', {
-        city: lastParams?.city,
-        days: lastParams?.days,
-        slug: itinerary?.slug,
-      });
-    } catch (err) {
-      console.error('PDF export failed:', err);
-      alert(err.message || 'Could not create the PDF. Please try again.');
-    } finally {
-      if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
-      btn.disabled = false;
-      btn.textContent = originalLabel;
-    }
-  }
+  window.addEventListener('afterprint', () => { if (printRestoreFn) printRestoreFn(); });
 
   // ── Share button ──────────────────────────────────────────────────
   function copyShareLink() {
