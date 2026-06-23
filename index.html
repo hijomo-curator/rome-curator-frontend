@@ -79,17 +79,19 @@
     .interest-chip { padding: 10px 6px 8px; border: 1px solid var(--parchment); border-radius: 4px; font-size: 11px; color: var(--ink-mid); background: var(--cream); cursor: pointer; transition: all 0.15s; text-align: center; user-select: none; line-height: 1.3; font-weight: 400; }
     .interest-chip:hover { border-color: var(--terra-light); color: var(--terracotta); background: #FDF8F5; }
     .interest-chip.active { background: var(--terracotta); border-color: var(--terracotta); color: white; }
-    .interest-chip.city-chip { border-style: dashed; }
+    .interest-chip.city-chip { border-style: dashed; padding: 9px 8px 8px; }
     .interest-chip.city-chip.active { border-style: solid; }
     .chip-icon { display: block; font-size: 16px; margin-bottom: 4px; }
-    .city-tag { display: inline-block; font-size: 9px; color: var(--gold); background: rgba(196,146,42,0.12); border-radius: 2px; padding: 1px 4px; margin-top: 3px; }
+    .city-chip .chip-icon { font-size: 15px; margin-bottom: 3px; }
+    .city-tag { display: inline-block; font-size: 9px; color: var(--gold); background: rgba(196,146,42,0.12); border-radius: 2px; padding: 1px 4px; margin-top: 3px; margin-left: 3px; vertical-align: middle; }
     .interest-chip.active .city-tag { color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.15); }
     .section-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0 11px; }
     .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--parchment); }
     .section-divider span { font-size: 10px; color: var(--stone); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; }
-    .city-specials-group { margin-bottom: 10px; }
+    .city-specials-wrap { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px 24px; }
+    .city-specials-group { margin-bottom: 0; min-width: 0; }
     .city-specials-label { font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--terracotta); margin-bottom: 6px; }
-    .city-specials-row { margin-bottom: 0; }
+    .city-specials-row { margin-bottom: 0; grid-template-columns: repeat(3, 1fr); }
     .interest-limit-msg { font-size: 11px; color: var(--terracotta); margin-top: 8px; display: none; }
     .interest-chip.disabled-cap { opacity: 0.4; cursor: not-allowed; }
 
@@ -258,6 +260,7 @@
       .interest-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
       .interest-chip { padding: 12px 8px 10px; font-size: 12px; }
       .chip-icon { font-size: 18px; margin-bottom: 5px; }
+      .city-specials-wrap { grid-template-columns: 1fr; gap: 14px; }
 
       /* Loading state */
       .loading-state { padding: 40px 20px; }
@@ -702,50 +705,50 @@
   const MONTH_NAMES = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
 
   const UNIVERSAL = [
-    { v:'local-food',   label:'Local food',         icon:'🍽️' },
+    { v:'local-food',   label:'Local food',         icon:'🍽' },
     { v:'drinks',       label:'Drinks & aperitivo',  icon:'🍷' },
     { v:'nightlife',    label:'Nightlife',           icon:'🌙' },
     { v:'markets',      label:'Markets',             icon:'🛒' },
-    { v:'history',      label:'Ancient history',     icon:'🏛️' },
+    { v:'history',      label:'Ancient history',     icon:'🏛' },
     { v:'art-museums',  label:'Art & museums',       icon:'🎨' },
     { v:'nature',       label:'Nature & landscapes', icon:'🌿' },
-    { v:'off-beat',     label:'Off-beat spots',      icon:'🗺️' },
+    { v:'off-beat',     label:'Off-beat spots',      icon:'🗺' },
     { v:'walking',      label:'Walking & city',      icon:'🚶' },
-    { v:'architecture', label:'Architecture',        icon:'🏗️' },
+    { v:'architecture', label:'Architecture',        icon:'🏗' },
   ];
 
   const CITY_SPECIALS = {
-    'Rome':                [{ v:'gelato', label:'Gelato trails', icon:'🍦' }, { v:'coffee', label:'Coffee culture', icon:'☕' }, { v:'roman-ruins', label:'Ruins deep-dive', icon:'🏟️' }],
-    'Florence':            [{ v:'wine', label:'Wine & enoteca', icon:'🍾' }, { v:'renaissance', label:'Renaissance art', icon:'🖼️' }, { v:'artisan', label:'Artisan crafts', icon:'🧶' }],
-    'Amalfi Coast':        [{ v:'lemons', label:'Lemon & limoncello', icon:'🍋' }, { v:'coastal-walks', label:'Coastal trails', icon:'🧍' }, { v:'ferries', label:'Ferry hopping', icon:'⛴️' }],
-    'Sicily':              [{ v:'street-food', label:'Street food trails', icon:'🥔' }, { v:'greek-temples', label:'Greek temples', icon:'🏛️' }, { v:'baroque', label:'Baroque towns', icon:'🏰' }],
+    'Rome':                [{ v:'gelato', label:'Gelato trails', icon:'🍦' }, { v:'coffee', label:'Coffee culture', icon:'☕' }, { v:'roman-ruins', label:'Ruins deep-dive', icon:'🏟' }],
+    'Florence':            [{ v:'wine', label:'Wine & enoteca', icon:'🍾' }, { v:'renaissance', label:'Renaissance art', icon:'🖼' }, { v:'artisan', label:'Artisan crafts', icon:'🧶' }],
+    'Amalfi Coast':        [{ v:'lemons', label:'Lemon & limoncello', icon:'🍋' }, { v:'coastal-walks', label:'Coastal trails', icon:'🧍' }, { v:'ferries', label:'Ferry hopping', icon:'⛴' }],
+    'Sicily':              [{ v:'street-food', label:'Street food trails', icon:'🥔' }, { v:'greek-temples', label:'Greek temples', icon:'🏛' }, { v:'baroque', label:'Baroque towns', icon:'🏰' }],
     'Lisbon':              [{ v:'fado', label:'Fado & music', icon:'🎵' }, { v:'pasteis', label:'Pastéis & bakeries', icon:'🥐' }, { v:'viewpoints', label:'Viewpoints & trams', icon:'🚃' }],
     'Porto':               [{ v:'wine', label:'Port wine caves', icon:'🍷' }, { v:'tiles', label:'Azulejo tiles', icon:'🧩' }, { v:'francesinha', label:'Francesinha trail', icon:'🥪' }],
-    'Tokyo':               [{ v:'ramen', label:'Ramen & izakaya', icon:'🍜' }, { v:'shrines', label:'Temples & shrines', icon:'⛩️' }, { v:'konbini', label:'Konbini culture', icon:'🏪' }],
+    'Tokyo':               [{ v:'ramen', label:'Ramen & izakaya', icon:'🍜' }, { v:'shrines', label:'Temples & shrines', icon:'⛩' }, { v:'konbini', label:'Konbini culture', icon:'🏪' }],
     'Kyoto':               [{ v:'matcha', label:'Matcha & tea', icon:'🍵' }, { v:'geisha', label:'Geisha districts', icon:'🏨' }, { v:'zen-gardens', label:'Zen gardens', icon:'🍃' }],
     'Osaka':               [{ v:'takoyaki', label:'Takoyaki & okonomiyaki', icon:'🐙' }, { v:'kushikatsu', label:'Kushikatsu bars', icon:'🍢' }, { v:'namba', label:'Namba nightlife', icon:'🎮' }],
-    'Mount Fuji & Hakone': [{ v:'onsen', label:'Onsen & ryokan', icon:'♨️' }, { v:'fuji-views', label:'Fuji viewpoints', icon:'🗻' }, { v:'ropeway', label:'Hakone ropeway', icon:'🚡' }],
+    'Mount Fuji & Hakone': [{ v:'onsen', label:'Onsen & ryokan', icon:'♨' }, { v:'fuji-views', label:'Fuji viewpoints', icon:'🗻' }, { v:'ropeway', label:'Hakone ropeway', icon:'🚡' }],
     'Bangkok':             [{ v:'temples', label:'Temple trails', icon:'🛕' }, { v:'street-food', label:'Street food & markets', icon:'🍜' }, { v:'rooftops', label:'Rooftop bars', icon:'🍹' }],
     'Chiang Mai':          [{ v:'temples', label:'Temple trails', icon:'🛕' }, { v:'night-mkt', label:'Night market food', icon:'🍢' }, { v:'trekking', label:'Jungle trekking', icon:'🌲' }],
-    'Phuket':              [{ v:'beaches', label:'Beach hopping', icon:'🏖️' }, { v:'seafood', label:'Fresh seafood', icon:'🦞' }, { v:'islands', label:'Island day trips', icon:'⛵' }],
+    'Phuket':              [{ v:'beaches', label:'Beach hopping', icon:'🏖' }, { v:'seafood', label:'Fresh seafood', icon:'🦞' }, { v:'islands', label:'Island day trips', icon:'⛵' }],
     'Mumbai':              [{ v:'street-food', label:'Street food trails', icon:'🥘' }, { v:'dabba', label:'Dabbawala culture', icon:'🍱' }, { v:'bollywood', label:'Film & culture', icon:'🎬' }],
-    'North Goa':           [{ v:'seafood', label:'Beach shack seafood', icon:'🦞' }, { v:'flea-markets', label:'Flea markets', icon:'🛍️' }, { v:'feni', label:'Feni & cashew trails', icon:'🥃' }],
-    'South Goa':           [{ v:'beaches', label:'Quiet beaches', icon:'🏖️' }, { v:'seafood', label:'Goan fish curry', icon:'🐟' }, { v:'wildlife', label:'Wildlife sanctuary', icon:'🦊' }],
-    'Colombo':             [{ v:'kottu', label:'Kottu & hoppers', icon:'🍛' }, { v:'colonial', label:'Colonial architecture', icon:'🏛️' }, { v:'pettah', label:'Pettah market', icon:'🛍️' }],
-    'Galle':               [{ v:'fort', label:'Galle Fort walk', icon:'🏰' }, { v:'seafood', label:'Fresh crab & tuna', icon:'🦀' }, { v:'beaches', label:'South coast beaches', icon:'🏖️' }],
+    'North Goa':           [{ v:'seafood', label:'Beach shack seafood', icon:'🦞' }, { v:'flea-markets', label:'Flea markets', icon:'🛍' }, { v:'feni', label:'Feni & cashew trails', icon:'🥃' }],
+    'South Goa':           [{ v:'beaches', label:'Quiet beaches', icon:'🏖' }, { v:'seafood', label:'Goan fish curry', icon:'🐟' }, { v:'wildlife', label:'Wildlife sanctuary', icon:'🦊' }],
+    'Colombo':             [{ v:'kottu', label:'Kottu & hoppers', icon:'🍛' }, { v:'colonial', label:'Colonial architecture', icon:'🏛' }, { v:'pettah', label:'Pettah market', icon:'🛍' }],
+    'Galle':               [{ v:'fort', label:'Galle Fort walk', icon:'🏰' }, { v:'seafood', label:'Fresh crab & tuna', icon:'🦀' }, { v:'beaches', label:'South coast beaches', icon:'🏖' }],
     'Kandy':               [{ v:'temple', label:'Temple of the Tooth', icon:'🛕' }, { v:'tea', label:'Ceylon tea culture', icon:'🍵' }, { v:'botanical', label:'Botanical gardens', icon:'🌺' }],
     'Hanoi':               [{ v:'pho', label:'Phở & bun cha', icon:'🍜' }, { v:'egg-coffee', label:'Egg coffee culture', icon:'☕' }, { v:'old-quarter', label:'Old Quarter trails', icon:'🛵' }],
     'Hoi An':              [{ v:'cao-lau', label:'Cao lau & white rose', icon:'🍜' }, { v:'lanterns', label:'Lantern nights', icon:'🏮' }, { v:'tailors', label:'Bespoke tailoring', icon:'🧵' }],
-    'Ho Chi Minh City':    [{ v:'com-tam', label:'Com tam & banh mi', icon:'🍚' }, { v:'history', label:'War history sites', icon:'🏛️' }, { v:'rooftops', label:'Rooftop bar scene', icon:'🍹' }],
+    'Ho Chi Minh City':    [{ v:'com-tam', label:'Com tam & banh mi', icon:'🍚' }, { v:'history', label:'War history sites', icon:'🏛' }, { v:'rooftops', label:'Rooftop bar scene', icon:'🍹' }],
     'Nairobi':             [{ v:'nyama-choma', label:'Nyama choma', icon:'🍖' }, { v:'wildlife', label:'Urban wildlife', icon:'🦒' }, { v:'art-scene', label:'Art & creative scene', icon:'🎨' }],
     'Maasai Mara':         [{ v:'migration', label:'Great Migration', icon:'🦓' }, { v:'big-five', label:'Big Five tracking', icon:'🦏' }, { v:'balloon', label:'Hot air balloon', icon:'🎈' }],
     'Diani Beach':         [{ v:'seafood', label:'Swahili seafood', icon:'🦞' }, { v:'snorkelling', label:'Reef snorkelling', icon:'🤿' }, { v:'colobus', label:'Colobus monkeys', icon:'🐒' }],
-    'Madrid':              [{ v:'tapas', label:'Tapas & vermouth', icon:'🍷' }, { v:'prado', label:'Prado & Reina Sofia', icon:'🖼️' }, { v:'rastro', label:'El Rastro market', icon:'🛍️' }],
-    'Barcelona':           [{ v:'vermouth', label:'Vermouth culture', icon:'🍷' }, { v:'gaudi', label:'Gaudí architecture', icon:'🏗️' }, { v:'born', label:'El Born & Goth quarter', icon:'🚺' }],
+    'Madrid':              [{ v:'tapas', label:'Tapas & vermouth', icon:'🍷' }, { v:'prado', label:'Prado & Reina Sofia', icon:'🖼' }, { v:'rastro', label:'El Rastro market', icon:'🛍' }],
+    'Barcelona':           [{ v:'vermouth', label:'Vermouth culture', icon:'🍷' }, { v:'gaudi', label:'Gaudí architecture', icon:'🏗' }, { v:'born', label:'El Born & Goth quarter', icon:'🏘' }],
     'Seville':             [{ v:'flamenco', label:'Flamenco & sherry', icon:'💃' }, { v:'tapas', label:'Tapas bar hopping', icon:'🍴' }, { v:'triana', label:'Triana neighbourhood', icon:'🌉' }],
-    'Athens':              [{ v:'souvlaki', label:'Souvlaki trails', icon:'🍖' }, { v:'acropolis', label:'Acropolis & history', icon:'🏛️' }, { v:'neighbourhood', label:'Exarcheia & Psiri', icon:'🚺' }],
+    'Athens':              [{ v:'souvlaki', label:'Souvlaki trails', icon:'🍖' }, { v:'acropolis', label:'Acropolis & history', icon:'🏛' }, { v:'neighbourhood', label:'Exarcheia & Psiri', icon:'🏘' }],
     'Santorini':           [{ v:'wine', label:'Assyrtiko wine', icon:'🍷' }, { v:'caldera', label:'Caldera views', icon:'🌄' }, { v:'volcanic', label:'Volcano & hot springs', icon:'🌋' }],
-    'Mykonos':             [{ v:'beaches', label:'Beach clubs', icon:'🏖️' }, { v:'seafood', label:'Fresh seafood', icon:'🦞' }, { v:'hora', label:'Hora & Little Venice', icon:'🛶' }],
+    'Mykonos':             [{ v:'beaches', label:'Beach clubs', icon:'🏖' }, { v:'seafood', label:'Fresh seafood', icon:'🦞' }, { v:'hora', label:'Hora & Little Venice', icon:'🛶' }],
     'Stockholm':           [{ v:'archipelago', label:'Archipelago islands', icon:'⛵' }, { v:'fika', label:'Fika & konditori', icon:'☕' }, { v:'design', label:'Nordic design', icon:'🪑' }],
   };
 
@@ -980,10 +983,12 @@
       return;
     }
 
-    // Only show as many specials chips as the cap allows — no point
-    // displaying a 3rd chip for a city when only 2 can ever be active.
+    // Show all available specials for each city (data has 3 per city) so
+    // there's a real choice to make — the 2-per-city SELECTION cap is
+    // enforced separately in toggleInterestChip/refreshInterestCapVisuals.
+    // Showing only 2 chips would remove any actual choice.
     const sections = cities
-      .map(city => ({ city, specials: (CITY_SPECIALS[city] || []).slice(0, MAX_SPECIALS_PER_CITY) }))
+      .map(city => ({ city, specials: CITY_SPECIALS[city] || [] }))
       .filter(s => s.specials.length > 0);
 
     if (!sections.length) {
@@ -1000,14 +1005,14 @@
     // Each chip carries data-city so the per-city cap can be enforced
     // independently of other cities and of the universal interests grid.
     if (cities.length > 1) {
-      cG.innerHTML = sections.map(({ city, specials }) => `
+      cG.innerHTML = `<div class="city-specials-wrap">${sections.map(({ city, specials }) => `
         <div class="city-specials-group" data-city="${city}">
           <div class="city-specials-label">${city}</div>
           <div class="interest-grid city-specials-row">${specials.map(d => chip(d, true, city)).join('')}</div>
         </div>
-      `).join('');
+      `).join('')}</div>`;
     } else {
-      cG.innerHTML = `<div data-city="${cities[0]}">${sections.map(s => s.specials.map(d => chip(d, true, s.city)).join('')).join('')}</div>`;
+      cG.innerHTML = `<div class="interest-grid city-specials-row" data-city="${cities[0]}">${sections.map(s => s.specials.map(d => chip(d, true, s.city)).join('')).join('')}</div>`;
     }
 
     cG.querySelectorAll('.interest-chip').forEach(c => c.addEventListener('click', () => toggleInterestChip(c)));
