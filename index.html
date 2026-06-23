@@ -1583,6 +1583,12 @@
       // user's actual page (open/closed accordion state, donation block,
       // etc.) should be left exactly as they had it.
       clone = sourceEl.cloneNode(true);
+      // Strip the id immediately — cloneNode copies it verbatim, and this
+      // clone briefly lives in the real DOM alongside the original while
+      // html2canvas captures it. Two elements sharing id="itinOutput" at
+      // once would make every other getElementById('itinOutput') call in
+      // the codebase non-deterministic for that window.
+      clone.removeAttribute('id');
       clone.querySelectorAll('.refine-bar').forEach(el => el.remove());
       clone.querySelectorAll('#donationSection, .donation-section').forEach(el => el.remove());
       clone.querySelectorAll('#emailPostSection, .email-post-section').forEach(el => el.remove());
@@ -1595,11 +1601,23 @@
       clone.querySelectorAll('.day-chev').forEach(el => { el.style.display = 'none'; });
       clone.querySelectorAll('.day-hd').forEach(el => { el.style.cursor = 'default'; el.removeAttribute('onclick'); });
 
-      // Render off-screen so the user doesn't see a flash of unstyled/
-      // wide content while html2canvas captures it.
-      clone.style.position = 'fixed';
+      // Render in normal page flow, invisible via opacity rather than
+      // pushed off-screen or hidden. Two things to avoid here, both
+      // documented html2canvas failure modes that can produce a blank
+      // capture: (1) large negative offsets like left:-9999px — its
+      // internal scroll/viewport math doesn't reliably account for
+      // content far outside the visible area; (2) visibility:hidden or
+      // display:none — html2canvas's own source explicitly skips elements
+      // with either of those, same outcome as a true offscreen failure.
+      // opacity:0 keeps the element "visible" to the renderer (real
+      // layout, real dimensions, included in the render pass) while
+      // showing nothing to the user.
+      clone.style.position = 'absolute';
       clone.style.top = '0';
-      clone.style.left = '-9999px';
+      clone.style.left = '0';
+      clone.style.zIndex = '-1';
+      clone.style.opacity = '0';
+      clone.style.pointerEvents = 'none';
       clone.style.display = 'block';
       clone.style.width = sourceEl.offsetWidth + 'px';
       document.body.appendChild(clone);
@@ -1611,7 +1629,29 @@
         margin: 10,
         filename,
         image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          // Belt-and-suspenders: html2canvas builds its OWN internal clone
+          // of whatever element we hand it. Force that internal clone back
+          // to fully visible/normal-positioned regardless of how our outer
+          // clone is styled — this is the documented, reliable fix for the
+          // "blank capture" failure mode (confirmed via html2canvas GitHub
+          // issues — elements with opacity/visibility/position tricks can
+          // render blank without this).
+          onclone: (clonedDoc, clonedEl) => {
+            // html2canvas calls onclone with (document, element) — the
+            // second argument is the cloned reference element directly,
+            // more reliable than guessing its position in the cloned body.
+            const el = clonedEl || clonedDoc.body.firstElementChild;
+            if (el) {
+              el.style.opacity = '1';
+              el.style.visibility = 'visible';
+              el.style.position = 'static';
+            }
+          },
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'avoid-all'], avoid: '.day-card' },
       }).from(clone).save();
