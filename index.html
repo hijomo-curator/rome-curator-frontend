@@ -172,13 +172,6 @@
     .act-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
     .act-item { display: flex; gap: 9px; align-items: flex-start; font-size: 13px; color: var(--ink-mid); line-height: 1.55; }
     .act-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--terra-light); margin-top: 8px; flex-shrink: 0; }
-    .refine-bar { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--parchment); display: flex; gap: 8px; }
-    .refine-inp { flex: 1; padding: 8px 11px; border: 1px solid var(--parchment); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--ink); background: var(--cream); outline: none; }
-    .refine-inp:focus { border-color: var(--terracotta); }
-    .btn-refine { padding: 8px 14px; background: transparent; border: 1px solid var(--terracotta); color: var(--terracotta); border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
-    .btn-refine:hover { background: var(--terracotta); color: white; }
-    .btn-refine:disabled { opacity: 0.5; cursor: not-allowed; }
-
     /* FOOTER */
     .itin-footer { padding: 20px 32px; background: var(--parchment); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
     .footer-note { font-size: 12px; color: var(--ink-light); font-style: italic; }
@@ -212,10 +205,6 @@
     .btn-donate.visible { display: block; }
     .btn-donate:hover { background: var(--terra-dark); }
     .btn-donate:disabled { background: var(--stone); cursor: not-allowed; }
-    .donation-paypal-links { display: none; gap: 8px; flex-direction: column; }
-    .donation-paypal-links.visible { display: flex; }
-    .btn-paypal { width: 100%; padding: 12px; background: #003087; color: white; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; text-decoration: none; display: block; text-align: center; }
-    .btn-paypal:hover { background: #001f5a; }
     .donation-note { font-size: 10.5px; color: var(--stone); margin-top: 12px; line-height: 1.6; }
     .donation-success { display: none; padding: 14px 18px; background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 6px; margin-top: 12px; }
     .donation-success-text { font-size: 13px; color: #14532D; font-weight: 500; }
@@ -245,7 +234,6 @@
       /* Fix iOS auto-zoom on inputs — must be 16px+ */
       select, input[type="number"], input[type="text"], input[type="email"] { font-size: 16px; }
       .email-input-sm { font-size: 16px; }
-      .refine-inp { font-size: 16px; }
 
       /* Form rows — all single column */
       .form-row-3, .form-row-3-equal, .form-row-2, .form-row-4 { grid-template-columns: 1fr; gap: 10px; }
@@ -285,10 +273,6 @@
       .day-bd { padding: 4px 16px 16px; }
       .act-item { font-size: 13px; line-height: 1.6; }
 
-      /* Refine bar — stack vertically on mobile */
-      .refine-bar { flex-direction: column; gap: 8px; }
-      .btn-refine { width: 100%; padding: 10px; text-align: center; }
-
       /* Footer */
       .itin-footer { padding: 16px; flex-direction: column; align-items: stretch; gap: 12px; }
       .btn-restart { text-align: center; padding: 13px; }
@@ -317,7 +301,7 @@
     @media print {
       .header, .form-section, .loading-state, .error-box,
       .donation-section, .email-post-section, .itin-footer, .disclaimer,
-      .generating-banner, .refine-bar, .day-chev {
+      .generating-banner, .day-chev {
         display: none !important;
       }
       body.pdf-print-mode .itinerary-output {
@@ -402,7 +386,6 @@
           <select id="pace">
             <option value="relaxed">Relaxed</option>
             <option value="balanced" selected>Balanced</option>
-            <option value="packed">Packed</option>
           </select>
         </div>
       </div>
@@ -578,10 +561,7 @@
         <input class="donation-open-input" type="number" id="donationOpenAmount" placeholder="Enter amount" min="1" max="10000" />
       </div>
       <button class="btn-donate" id="btnDonateRazorpay" onclick="initRazorpayDonation()">Support Rome Curator →</button>
-      <div class="donation-paypal-links" id="donationPaypalLinks">
-        <a class="btn-paypal" id="btnPaypalTier" href="#" target="_blank" rel="noopener" onclick="trackPaypalDonation()">Support on PayPal →</a>
-      </div>
-      <p class="donation-note" id="donationGatewayNote">Powered by Razorpay · Secure · Takes 30 seconds</p>
+      <p class="donation-note">Powered by Razorpay · Secure · Takes 30 seconds</p>
       <div class="donation-success" id="donationSuccess">
         <div class="donation-success-text">🎉 Thank you so much — genuinely.</div>
         <div class="donation-success-sub">You're helping keep Rome Curator free and independent. That means a lot.</div>
@@ -1395,10 +1375,6 @@
       </div>
       <div class="day-bd" id="bd${i}">
         ${sHTML}
-        <div class="refine-bar">
-          <input class="refine-inp" type="text" placeholder="Refine this day… e.g. 'skip museums, more food'" id="ri${i}" />
-          <button class="btn-refine" onclick="refine(${i},${day.day})">Refine ↻</button>
-        </div>
       </div>`;
     return card;
   }
@@ -1471,10 +1447,8 @@
     [1, 2, 3].forEach(t => { const el = document.getElementById('tier' + t); if (el) el.classList.remove('active'); });
     document.getElementById('donationOpenRow').classList.remove('visible');
     document.getElementById('btnDonateRazorpay').classList.remove('visible');
-    document.getElementById('donationPaypalLinks').classList.remove('visible');
     document.getElementById('donationSuccess').style.display = 'none';
     document.getElementById('donationTiers').style.opacity = '1';
-    detectDonationGateway();
 
     // ── Update URL to shareable link if slug exists ───────────────
     if (data.slug) {
@@ -1487,42 +1461,6 @@
     if (!bd) return;
     const open = bd.classList.contains('open');
     bd.classList.toggle('open', !open); ch.classList.toggle('open', !open);
-  }
-
-  async function refine(idx, dayNum) {
-    const inp = document.getElementById('ri'+idx);
-    const instruction = inp.value.trim();
-    if (!instruction || !itinerary) return;
-    const btn = inp.nextElementSibling;
-    btn.disabled = true; btn.textContent = '…';
-    const cities = getSelectedCities();
-    const city = (cities.length > 1 ? cities.join(' + ') : cities[0]) || (lastParams?.city) || '';
-    const targetDay = itinerary.days.find(d => d.day === dayNum);
-    try {
-      const res = await fetch(`${BACKEND_URL}/refine-day`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city, day: targetDay, instruction }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Refinement failed');
-      // ── PostHog: day refined ──
-      if (window.posthog) posthog.capture('day_refined', {
-        city: city,
-        day_number: dayNum,
-        instruction: instruction,
-      });
-      itinerary.days = itinerary.days.map(d => d.day === dayNum ? data : d);
-      renderOutput(itinerary, city, null, null, lastParams?.month);
-      setTimeout(() => {
-        const bd=document.getElementById('bd'+idx), ch=document.getElementById('chev'+idx);
-        if(bd&&!bd.classList.contains('open')){bd.classList.add('open');ch.classList.add('open');}
-      }, 30);
-    } catch(e) {
-      alert('Refinement failed: ' + e.message);
-    } finally {
-      btn.disabled = false; btn.textContent = 'Refine ↻'; inp.value = '';
-    }
   }
 
   async function savePostEmail() {
@@ -1672,86 +1610,35 @@
   }
 
   // ── DONATION SYSTEM ──────────────────────────────────────────────
-  // India (IP detected) → Razorpay ₹. International → PayPal $.
-  // ⚠️ Replace PAYPAL_ME_BASE with your actual PayPal.me link before going live.
-  const PAYPAL_ME_BASE = "https://paypal.me/YOUR_PAYPAL_HANDLE"; // ← replace this
+  // ALL donations now route through Razorpay's unified checkout — PayPal
+  // is available as a payment method inside that same checkout modal, so
+  // the earlier IP-detected India→Razorpay / International→PayPal.me split
+  // (and the PAYPAL_ME_BASE direct-link logic) has been removed entirely.
+  const DONATION_TIERS = { t1: 99, t2: 249, currency: '₹' };
 
-  const DONATION_TIERS = {
-    INR: { t1: 99,  t2: 249, currency: '₹', label: 'INR' },
-    USD: { t1: 1,   t2: 3,   currency: '$', label: 'USD' },
-  };
-
-  let donationGateway = 'INR';
   let selectedTier = null;
-
-  async function detectDonationGateway() {
-    try {
-      const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) });
-      const data = await res.json();
-      donationGateway = (data.country_code === 'IN') ? 'INR' : 'USD';
-    } catch {
-      donationGateway = 'USD';
-    }
-    renderDonationUI();
-  }
-
-  function renderDonationUI() {
-    const cfg = DONATION_TIERS[donationGateway];
-    const isIndia = donationGateway === 'INR';
-    document.getElementById('tier1Amount').textContent = `${cfg.currency}${cfg.t1}`;
-    document.getElementById('tier2Amount').textContent = `${cfg.currency}${cfg.t2}`;
-    document.getElementById('tier1AmountSec').textContent = isIndia ? '~$1' : '~₹83';
-    document.getElementById('tier2AmountSec').textContent = isIndia ? '~$3' : '~₹249';
-    document.getElementById('donationCurrencyLabel').textContent = cfg.currency;
-    document.getElementById('btnDonateRazorpay').classList.toggle('visible', false);
-    document.getElementById('donationPaypalLinks').classList.toggle('visible', false);
-    document.getElementById('donationGatewayNote').textContent = isIndia
-      ? 'Powered by Razorpay · Secure · Takes 30 seconds'
-      : 'Powered by PayPal · Opens in a new tab · No account needed';
-  }
 
   function selectTier(tier) {
     selectedTier = tier;
     [1, 2, 3].forEach(t => document.getElementById('tier' + t).classList.toggle('active', t === tier));
-    const cfg = DONATION_TIERS[donationGateway];
-    const isIndia = donationGateway === 'INR';
+    const cfg = DONATION_TIERS;
     const openRow = document.getElementById('donationOpenRow');
     const razBtn = document.getElementById('btnDonateRazorpay');
-    const paypalLinks = document.getElementById('donationPaypalLinks');
-    const paypalBtn = document.getElementById('btnPaypalTier');
     openRow.classList.toggle('visible', tier === 3);
-    if (isIndia) {
-      razBtn.classList.add('visible');
-      paypalLinks.classList.remove('visible');
-      if (tier === 1) razBtn.textContent = `Support with ${cfg.currency}${cfg.t1} →`;
-      else if (tier === 2) razBtn.textContent = `Support with ${cfg.currency}${cfg.t2} →`;
-      else razBtn.textContent = 'Support Rome Curator →';
-    } else {
-      razBtn.classList.remove('visible');
-      paypalLinks.classList.add('visible');
-      if (tier === 1) { paypalBtn.href = `${PAYPAL_ME_BASE}/${cfg.t1}`; paypalBtn.textContent = `Support with ${cfg.currency}${cfg.t1} on PayPal →`; }
-      else if (tier === 2) { paypalBtn.href = `${PAYPAL_ME_BASE}/${cfg.t2}`; paypalBtn.textContent = `Support with ${cfg.currency}${cfg.t2} on PayPal →`; }
-      else { paypalBtn.href = PAYPAL_ME_BASE; paypalBtn.textContent = 'Choose your amount on PayPal →'; }
-    }
+    razBtn.classList.add('visible');
+    if (tier === 1) razBtn.textContent = `Support with ${cfg.currency}${cfg.t1} →`;
+    else if (tier === 2) razBtn.textContent = `Support with ${cfg.currency}${cfg.t2} →`;
+    else razBtn.textContent = 'Support Rome Curator →';
     if (window.posthog) posthog.capture('donation_initiated', {
-      tier, gateway: isIndia ? 'razorpay' : 'paypal',
+      tier, gateway: 'razorpay',
       amount: tier === 1 ? cfg.t1 : tier === 2 ? cfg.t2 : null,
-      currency: cfg.label, city: lastParams?.city,
-    });
-  }
-
-  function trackPaypalDonation() {
-    const cfg = DONATION_TIERS[donationGateway];
-    if (window.posthog) posthog.capture('donation_completed', {
-      gateway: 'paypal', tier: selectedTier,
-      amount: selectedTier === 1 ? cfg.t1 : selectedTier === 2 ? cfg.t2 : null,
-      currency: cfg.label, city: lastParams?.city, note: 'paypal_click_only',
+      currency: 'INR', city: lastParams?.city,
     });
   }
 
   async function initRazorpayDonation() {
     if (!selectedTier) { alert('Please select a support tier first.'); return; }
-    const cfg = DONATION_TIERS['INR'];
+    const cfg = DONATION_TIERS;
     let amount;
     if (selectedTier === 1) amount = cfg.t1;
     else if (selectedTier === 2) amount = cfg.t2;
