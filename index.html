@@ -205,6 +205,10 @@
     .btn-donate.visible { display: block; }
     .btn-donate:hover { background: var(--terra-dark); }
     .btn-donate:disabled { background: var(--stone); cursor: not-allowed; }
+    .donation-paypal-links { display: none; gap: 8px; flex-direction: column; }
+    .donation-paypal-links.visible { display: flex; }
+    .btn-paypal { width: 100%; padding: 12px; background: #003087; color: white; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; text-decoration: none; display: block; text-align: center; }
+    .btn-paypal:hover { background: #001f5a; }
     .donation-note { font-size: 10.5px; color: var(--stone); margin-top: 12px; line-height: 1.6; }
     .donation-success { display: none; padding: 14px 18px; background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 6px; margin-top: 12px; }
     .donation-success-text { font-size: 13px; color: #14532D; font-weight: 500; }
@@ -561,7 +565,10 @@
         <input class="donation-open-input" type="number" id="donationOpenAmount" placeholder="Enter amount" min="1" max="10000" />
       </div>
       <button class="btn-donate" id="btnDonateRazorpay" onclick="initRazorpayDonation()">Support Rome Curator →</button>
-      <p class="donation-note">Powered by Razorpay · Secure · Takes 30 seconds</p>
+      <div class="donation-paypal-links" id="donationPaypalLinks">
+        <a class="btn-paypal" id="btnPaypalTier" href="#" target="_blank" rel="noopener" onclick="trackPaypalDonation()">Support on PayPal →</a>
+      </div>
+      <p class="donation-note" id="donationGatewayNote">Powered by Razorpay · Secure · Takes 30 seconds</p>
       <div class="donation-success" id="donationSuccess">
         <div class="donation-success-text">🎉 Thank you so much — genuinely.</div>
         <div class="donation-success-sub">You're helping keep Rome Curator free and independent. That means a lot.</div>
@@ -1447,8 +1454,10 @@
     [1, 2, 3].forEach(t => { const el = document.getElementById('tier' + t); if (el) el.classList.remove('active'); });
     document.getElementById('donationOpenRow').classList.remove('visible');
     document.getElementById('btnDonateRazorpay').classList.remove('visible');
+    document.getElementById('donationPaypalLinks').classList.remove('visible');
     document.getElementById('donationSuccess').style.display = 'none';
     document.getElementById('donationTiers').style.opacity = '1';
+    detectDonationGateway();
 
     // ── Update URL to shareable link if slug exists ───────────────
     if (data.slug) {
@@ -1610,35 +1619,94 @@
   }
 
   // ── DONATION SYSTEM ──────────────────────────────────────────────
-  // ALL donations now route through Razorpay's unified checkout — PayPal
-  // is available as a payment method inside that same checkout modal, so
-  // the earlier IP-detected India→Razorpay / International→PayPal.me split
-  // (and the PAYPAL_ME_BASE direct-link logic) has been removed entirely.
-  const DONATION_TIERS = { t1: 99, t2: 249, currency: '₹' };
+  // India (IP detected) → Razorpay ₹. International → PayPal $.
+  // PayPal uses three separate fixed PayPal Payment Links (one per tier),
+  // since PayPal.me was replaced with dedicated Payment Links — see
+  // PAYPAL_LINKS below. Tier 3 (open amount) link already collects a
+  // customer-set price on PayPal's own page, so no amount is appended.
+  const PAYPAL_LINKS = {
+    1: 'https://www.paypal.com/ncp/payment/7ED8SDUWJVU32',
+    2: 'https://www.paypal.com/ncp/payment/68FMAKLGGTENY',
+    3: 'https://www.paypal.com/ncp/payment/VENSF7MNAJXW4',
+  };
 
+  const DONATION_TIERS = {
+    INR: { t1: 99,  t2: 249, currency: '₹', label: 'INR' },
+    USD: { t1: 1,   t2: 3,   currency: '$', label: 'USD' },
+  };
+
+  let donationGateway = 'INR';
   let selectedTier = null;
+
+  async function detectDonationGateway() {
+    try {
+      const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) });
+      const data = await res.json();
+      donationGateway = (data.country_code === 'IN') ? 'INR' : 'USD';
+    } catch {
+      donationGateway = 'USD';
+    }
+    renderDonationUI();
+  }
+
+  function renderDonationUI() {
+    const cfg = DONATION_TIERS[donationGateway];
+    const isIndia = donationGateway === 'INR';
+    document.getElementById('tier1Amount').textContent = `${cfg.currency}${cfg.t1}`;
+    document.getElementById('tier2Amount').textContent = `${cfg.currency}${cfg.t2}`;
+    document.getElementById('tier1AmountSec').textContent = isIndia ? '~$1' : '~₹83';
+    document.getElementById('tier2AmountSec').textContent = isIndia ? '~$3' : '~₹249';
+    document.getElementById('donationCurrencyLabel').textContent = cfg.currency;
+    document.getElementById('btnDonateRazorpay').classList.toggle('visible', false);
+    document.getElementById('donationPaypalLinks').classList.toggle('visible', false);
+    document.getElementById('donationGatewayNote').textContent = isIndia
+      ? 'Powered by Razorpay · Secure · Takes 30 seconds'
+      : 'Powered by PayPal · Opens in a new tab · No account needed';
+  }
 
   function selectTier(tier) {
     selectedTier = tier;
     [1, 2, 3].forEach(t => document.getElementById('tier' + t).classList.toggle('active', t === tier));
-    const cfg = DONATION_TIERS;
+    const cfg = DONATION_TIERS[donationGateway];
+    const isIndia = donationGateway === 'INR';
     const openRow = document.getElementById('donationOpenRow');
     const razBtn = document.getElementById('btnDonateRazorpay');
-    openRow.classList.toggle('visible', tier === 3);
-    razBtn.classList.add('visible');
-    if (tier === 1) razBtn.textContent = `Support with ${cfg.currency}${cfg.t1} →`;
-    else if (tier === 2) razBtn.textContent = `Support with ${cfg.currency}${cfg.t2} →`;
-    else razBtn.textContent = 'Support Rome Curator →';
+    const paypalLinks = document.getElementById('donationPaypalLinks');
+    const paypalBtn = document.getElementById('btnPaypalTier');
+    openRow.classList.toggle('visible', tier === 3 && isIndia);
+    if (isIndia) {
+      razBtn.classList.add('visible');
+      paypalLinks.classList.remove('visible');
+      if (tier === 1) razBtn.textContent = `Support with ${cfg.currency}${cfg.t1} →`;
+      else if (tier === 2) razBtn.textContent = `Support with ${cfg.currency}${cfg.t2} →`;
+      else razBtn.textContent = 'Support Rome Curator →';
+    } else {
+      razBtn.classList.remove('visible');
+      paypalLinks.classList.add('visible');
+      paypalBtn.href = PAYPAL_LINKS[tier];
+      if (tier === 1) paypalBtn.textContent = `Support with ${cfg.currency}${cfg.t1} on PayPal →`;
+      else if (tier === 2) paypalBtn.textContent = `Support with ${cfg.currency}${cfg.t2} on PayPal →`;
+      else paypalBtn.textContent = 'Choose your amount on PayPal →';
+    }
     if (window.posthog) posthog.capture('donation_initiated', {
-      tier, gateway: 'razorpay',
+      tier, gateway: isIndia ? 'razorpay' : 'paypal',
       amount: tier === 1 ? cfg.t1 : tier === 2 ? cfg.t2 : null,
-      currency: 'INR', city: lastParams?.city,
+      currency: cfg.label, city: lastParams?.city,
+    });
+  }
+
+  function trackPaypalDonation() {
+    const cfg = DONATION_TIERS[donationGateway];
+    if (window.posthog) posthog.capture('donation_completed', {
+      gateway: 'paypal', tier: selectedTier,
+      amount: selectedTier === 1 ? cfg.t1 : selectedTier === 2 ? cfg.t2 : null,
+      currency: cfg.label, city: lastParams?.city, note: 'paypal_click_only',
     });
   }
 
   async function initRazorpayDonation() {
     if (!selectedTier) { alert('Please select a support tier first.'); return; }
-    const cfg = DONATION_TIERS;
+    const cfg = DONATION_TIERS['INR'];
     let amount;
     if (selectedTier === 1) amount = cfg.t1;
     else if (selectedTier === 2) amount = cfg.t2;
