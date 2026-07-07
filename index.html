@@ -1635,7 +1635,7 @@
     USD: { t1: 1,   t2: 3,   currency: '$', label: 'USD' },
   };
 
-  let donationGateway = 'INR';
+  let donationGateway = 'USD';
   let selectedTier = null;
 
   async function detectDonationGateway() {
@@ -1703,6 +1703,14 @@
       currency: cfg.label, city: lastParams?.city, note: 'paypal_click_only',
     });
   }
+
+  // Kick off gateway detection immediately on page load (not just when the
+  // donation section first renders). This gives the ipapi.co lookup the
+  // entire itinerary-generation window to resolve, instead of racing
+  // against a quick tier click right after generation finishes — which is
+  // what caused VPN/slow-network users to briefly see the INR/Razorpay
+  // default before detection caught up.
+  detectDonationGateway();
 
   async function initRazorpayDonation() {
     if (!selectedTier) { alert('Please select a support tier first.'); return; }
