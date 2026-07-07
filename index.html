@@ -445,6 +445,21 @@
       </div>
     </div>
 
+    <!-- Row 3: Food preference -->
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>Food preference</label>
+        <div class="select-wrap">
+          <select id="foodPreference">
+            <option value="any" selected>Any</option>
+            <option value="vegetarian">Vegetarian</option>
+            <option value="vegan">Vegan</option>
+            <option value="non_veg">Non-vegetarian (loves meat &amp; seafood)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <!-- Solo female safety note -->
     <div class="safety-note" id="safetyNote">
       <strong>Safety first:</strong> We'll tailor recommendations with solo female travellers in mind — well-connected areas, busy streets, trusted venues. Off-beat suggestions will include safety context. Always trust your instincts and research local conditions before you travel.
@@ -1106,6 +1121,7 @@
     const month = parseInt(document.getElementById('travelMonth').value);
     const travelStyle = document.getElementById('travelStyle').value;
     const budget = document.getElementById('budget').value;
+    const foodPreference = document.getElementById('foodPreference').value || 'any';
     const interests = selectedInterests();
 
     if (!month) { alert('Please select your travel month.'); return; }
@@ -1137,7 +1153,7 @@
     if (email) document.getElementById('postEmail').value = email;
     if (country) document.getElementById('postCountry').value = country;
 
-    lastParams = { city, cities: selectedCities, isMultiCity, days, pace, month, travelStyle, budget, interests, firstName, email };
+    lastParams = { city, cities: selectedCities, isMultiCity, days, pace, month, travelStyle, budget, foodPreference, interests, firstName, email };
 
     document.getElementById('formSection').style.display = 'none';
     document.getElementById('loadingState').style.display = 'block';
@@ -1157,7 +1173,7 @@
     document.getElementById('loadingMsg').textContent = msgs[0];
     msgTimer = setInterval(() => { mi=(mi+1)%msgs.length; document.getElementById('loadingMsg').textContent=msgs[mi]; }, 2200);
 
-    await callGenerate(city, days, pace, month, travelStyle, budget, interests, selectedCities, isMultiCity);
+    await callGenerate(city, days, pace, month, travelStyle, budget, foodPreference, interests, selectedCities, isMultiCity);
   }
 
   // Tracks whether the tab was backgrounded during the current generation,
@@ -1179,7 +1195,7 @@
     return 'req_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
   }
 
-  async function callGenerate(city, days, pace, month, travelStyle, budget, interests, cities, isMultiCity, existingRequestId) {
+  async function callGenerate(city, days, pace, month, travelStyle, budget, foodPreference, interests, cities, isMultiCity, existingRequestId) {
     const requestId = existingRequestId || generateRequestId();
     lastRequestId = requestId; // stored on lastParams-level scope for retry/resume
     tabWasBackgrounded = false;
@@ -1195,7 +1211,7 @@
       const res = await fetch(`${BACKEND_URL}/generate-itinerary-stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city, cities, isMultiCity, days, pace, month, travelStyle, budget, interests, requestId }),
+        body: JSON.stringify({ city, cities, isMultiCity, days, pace, month, travelStyle, budget, foodPreference, interests, requestId }),
       });
 
       if (!res.ok) {
@@ -1251,6 +1267,7 @@
               month: month2,
               travel_style: lastParams?.travelStyle,
               budget: lastParams?.budget,
+              food_preference: foodPreference,
               interests: interests,
               from_cache: !!event.itinerary?.fromCache,
             });
@@ -1298,7 +1315,7 @@
         if (window.posthog) posthog.capture('itinerary_generated', {
           city, cities: lastParams?.cities || [city], is_multi_city: !!isMultiCity,
           days, pace, month: lastParams?.month, travel_style: lastParams?.travelStyle,
-          budget: lastParams?.budget, interests, from_cache: false, recovered: true,
+          budget: lastParams?.budget, food_preference: lastParams?.foodPreference, interests, from_cache: false, recovered: true,
         });
         return true;
       }
@@ -1345,7 +1362,7 @@
     document.getElementById('errorBox').style.display = 'none';
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('loadingTitle').textContent = 'Trying again…';
-    const { city, cities, isMultiCity, days, pace, month, travelStyle, budget, interests } = lastParams;
+    const { city, cities, isMultiCity, days, pace, month, travelStyle, budget, foodPreference, interests } = lastParams;
     const msgs = LOADING_MSGS[city] || LOADING_MSGS['default'];
     let mi = 0;
     document.getElementById('loadingMsg').textContent = msgs[0];
@@ -1353,7 +1370,7 @@
     // Pass the previous requestId through — if the backend already made
     // progress (or finished) before the connection dropped, we recover
     // it instead of regenerating the whole trip from scratch.
-    await callGenerate(city, days, pace, month, travelStyle, budget, interests, cities, isMultiCity, lastRequestId);
+    await callGenerate(city, days, pace, month, travelStyle, budget, foodPreference, interests, cities, isMultiCity, lastRequestId);
   }
 
   // ── Build a single day card DOM element ───────────────────────
