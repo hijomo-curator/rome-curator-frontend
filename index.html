@@ -46,11 +46,35 @@
     .form-section-title { font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--stone); margin-bottom: 18px; }
     .form-row-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 0.7fr 0.7fr; gap: 12px; margin-bottom: 16px; }
-    .city-checkbox-list { display: flex; flex-direction: column; gap: 6px; max-height: 130px; overflow-y: auto; padding: 8px 10px; background: #FAF7F2; border: 1px solid #D4C9B8; border-radius: 4px; }
+    .city-dropdown { position: relative; }
+    .city-dropdown-trigger {
+      width: 100%; padding: 10px 30px 10px 12px; border: 1px solid var(--parchment); border-radius: 4px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; color: #9A8878; background: var(--cream);
+      text-align: left; cursor: pointer; position: relative; display: block; transition: border-color 0.2s;
+    }
+    .city-dropdown-trigger:focus { outline: none; border-color: var(--terracotta); }
+    .city-dropdown-trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+    .city-dropdown-trigger::after { content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%) rotate(0deg); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--stone); pointer-events: none; transition: transform 0.15s; }
+    .city-dropdown-trigger.open::after { transform: translateY(-50%) rotate(180deg); }
+    .city-dropdown-label.has-selection { color: var(--ink); font-weight: 500; }
+    .city-dropdown-panel {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+      background: var(--cream); border: 1px solid #D4C9B8; border-radius: 4px;
+      box-shadow: 0 6px 20px rgba(44,24,16,0.15); padding: 8px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .city-search-input {
+      width: 100%; padding: 8px 10px; border: 1px solid #D4C9B8; border-radius: 4px;
+      font-family: 'DM Sans', sans-serif; font-size: 12.5px; color: var(--ink); background: white; outline: none;
+    }
+    .city-search-input:focus { border-color: var(--terracotta); }
+    .city-checkbox-list { display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow-y: auto; }
     .city-checkbox-list::-webkit-scrollbar { width: 4px; }
     .city-checkbox-list::-webkit-scrollbar-thumb { background: #D4956A; border-radius: 2px; }
+    .city-group-label { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--stone); font-weight: 600; padding: 6px 6px 2px; }
+    .city-no-match { font-size: 12.5px; color: #9A8878; padding: 8px 6px; }
     .city-placeholder { font-size: 13px; color: #9A8878; padding: 4px 0; }
-    .city-checkbox-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .city-checkbox-item { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 5px 6px; border-radius: 3px; }
+    .city-checkbox-item:hover { background: rgba(184,92,56,0.07); }
     .city-checkbox-item input[type="checkbox"] { width: 15px; height: 15px; accent-color: #B85C38; cursor: pointer; flex-shrink: 0; }
     .city-checkbox-item label { font-size: 13px; color: #2C1810; cursor: pointer; line-height: 1.3; }
     .city-checkbox-item input:checked + label { color: #B85C38; font-weight: 600; }
@@ -238,10 +262,12 @@
       /* Fix iOS auto-zoom on inputs — must be 16px+ */
       select, input[type="number"], input[type="text"], input[type="email"] { font-size: 16px; }
       .email-input-sm { font-size: 16px; }
+      .city-dropdown-trigger { font-size: 16px; }
+      .city-search-input { font-size: 16px; }
 
       /* Form rows — all single column */
       .form-row-3, .form-row-3-equal, .form-row-2, .form-row-4 { grid-template-columns: 1fr; gap: 10px; }
-      .city-checkbox-list { max-height: 110px; }
+      .city-checkbox-list { max-height: 180px; }
       .city-checkbox-item label { font-size: 14px; }
 
       /* Taller tap targets for selects and inputs */
@@ -375,8 +401,16 @@
       </div>
       <div class="form-group">
         <label>City / Region <span id="multiCityHint" style="font-size:10px;color:#B85C38;font-weight:500;display:none;">· multi-city</span></label>
-        <div id="cityCheckboxes" class="city-checkbox-list">
-          <span class="city-placeholder">— choose country first —</span>
+        <div class="city-dropdown" id="cityDropdown">
+          <button type="button" class="city-dropdown-trigger" id="cityDropdownTrigger" onclick="toggleCityDropdown()" disabled>
+            <span id="cityDropdownLabel" class="city-dropdown-label">— choose country first —</span>
+          </button>
+          <div class="city-dropdown-panel" id="cityDropdownPanel" style="display:none;">
+            <input type="text" class="city-search-input" id="citySearchInput" placeholder="Search cities…" oninput="filterCityOptions()" />
+            <div id="cityCheckboxes" class="city-checkbox-list">
+              <span class="city-placeholder">— choose country first —</span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="form-group">
@@ -655,13 +689,36 @@
     'Portugal':  ['Lisbon', 'Porto'],
     'Japan':     ['Tokyo', 'Kyoto', 'Osaka', 'Mount Fuji & Hakone'],
     'Thailand':  ['Bangkok', 'Chiang Mai', 'Phuket'],
-    'India':     ['Mumbai', 'North Goa', 'South Goa'],
+    'India':     ['Mumbai', 'North Goa', 'South Goa', 'Pune', 'Alibaug', 'Matheran', 'Lonavala', 'Mahabaleshwar', 'Nashik', 'Sindhudurg', 'Jaisalmer', 'Pushkar', 'Alleppey', 'Varkala', 'Gokarna', 'Coorg', 'Warangal', 'Vishakhapatnam', 'Pondicherry', 'Ooty', 'Kodaikanal', 'Srinagar', 'Khajuraho', 'Gangtok', 'Guwahati', 'Shillong'],
     'Sri Lanka': ['Colombo', 'Galle', 'Kandy'],
     'Vietnam':   ['Hanoi', 'Hoi An', 'Ho Chi Minh City'],
     'Kenya':     ['Nairobi', 'Maasai Mara', 'Diani Beach'],
     'Spain':     ['Madrid', 'Barcelona', 'Seville'],
     'Greece':    ['Athens', 'Santorini', 'Mykonos'],
     'Sweden':    ['Stockholm'],
+  };
+
+  // ── State/region grouping — currently only used for India, since it's
+  // the only country large enough (26 cities) to benefit from grouped
+  // headers in the new searchable city dropdown. Countries not listed
+  // here just render as a single flat, ungrouped list.
+  const COUNTRY_CITY_GROUPS = {
+    'India': {
+      'Maharashtra':        ['Mumbai', 'Pune', 'Alibaug', 'Matheran', 'Lonavala', 'Mahabaleshwar', 'Nashik', 'Sindhudurg'],
+      'Goa':                ['North Goa', 'South Goa'],
+      'Rajasthan':          ['Jaisalmer', 'Pushkar'],
+      'Kerala':             ['Alleppey', 'Varkala'],
+      'Karnataka':          ['Gokarna', 'Coorg'],
+      'Tamil Nadu':         ['Ooty', 'Kodaikanal'],
+      'Telangana':          ['Warangal'],
+      'Andhra Pradesh':     ['Vishakhapatnam'],
+      'Puducherry':         ['Pondicherry'],
+      'Jammu & Kashmir':    ['Srinagar'],
+      'Madhya Pradesh':     ['Khajuraho'],
+      'Sikkim':             ['Gangtok'],
+      'Assam':              ['Guwahati'],
+      'Meghalaya':          ['Shillong'],
+    },
   };
 
   const CITY_TAGLINES = {
@@ -681,6 +738,29 @@
     'Mumbai':              ['See <em>Mumbai</em><br>like a local.', "Beyond the Bollywood clichés. A curated Mumbai itinerary built around street food, dabbawala culture, and the city's real energy."],
     'North Goa':           ['See <em>North Goa</em><br>like a local.', 'Past the Calangute crowds. A curated North Goa itinerary built around beach shacks, flea markets, and the villages worth finding.'],
     'South Goa':           ['See <em>South Goa</em><br>like a local.', 'Beyond the party beaches. A curated South Goa itinerary built around quiet coves, Goan fish curry, and the coast most tourists rush past.'],
+    'Pune':                ['See <em>Pune</em><br>like a local.', "Beyond the Mumbai-comparison clichés. A curated Pune itinerary built around old-city heritage, hill forts, and the city's real food culture."],
+    'Alibaug':             ['See <em>Alibaug</em><br>like a local.', 'Beyond the Mumbai weekend-getaway crowd. A curated Alibaug itinerary built around quieter beaches, the sea fort, and real Konkani seafood.'],
+    'Matheran':            ['See <em>Matheran</em><br>like a local.', "Beyond the toy train souvenir stalls. A curated Matheran itinerary built around the hill station's vehicle-free trails and quieter viewpoints."],
+    'Lonavala':            ['See <em>Lonavala</em><br>like a local.', 'Beyond the chikki shop strip. A curated Lonavala itinerary built around ancient rock-cut caves, monsoon waterfalls, and quieter valley viewpoints.'],
+    'Mahabaleshwar':       ['See <em>Mahabaleshwar</em><br>like a local.', 'Beyond the strawberry-stall strip. A curated Mahabaleshwar itinerary built around real Western Ghats viewpoints, a genuine fort trek, and quieter farm visits.'],
+    'Nashik':              ['See <em>Nashik</em><br>like a local.', "Beyond the vineyard-tour circuit. A curated Nashik itinerary built around real wine tastings, Godavari river heritage, and the temple town's quieter corners."],
+    'Sindhudurg':          ['See <em>Sindhudurg</em><br>like a local.', 'Beyond the standard Konkan coast tour. A curated Sindhudurg itinerary built around the island sea fort, real Malvani thalis, and quieter Tarkarli beaches.'],
+    'Jaisalmer':           ['See <em>Jaisalmer</em><br>like a local.', "Beyond the camel safari clichés. A curated Jaisalmer itinerary built around the living fort's havelis, desert villages, and Rajasthani thalis."],
+    'Pushkar':             ['See <em>Pushkar</em><br>like a local.', "Beyond the camel fair crowds. A curated Pushkar itinerary built around the ghats, rooftop cafes, and the desert town's quieter rhythms."],
+    'Alleppey':            ['See <em>Alleppey</em><br>like a local.', "Beyond the standard houseboat tour. A curated Alleppey itinerary built around backwater villages, toddy shops, and the real rhythm of Kerala's canals."],
+    'Varkala':             ['See <em>Varkala</em><br>like a local.', "Beyond the cliffside cafes. A curated Varkala itinerary built around the quieter beaches, ayurveda, and the cliff's real sunset spots."],
+    'Gokarna':             ['See <em>Gokarna</em><br>like a local.', 'Beyond the Om Beach crowds. A curated Gokarna itinerary built around quieter coves, the temple town\'s own rhythm, and simple beach shacks.'],
+    'Coorg':               ['See <em>Coorg</em><br>like a local.', 'Beyond the resort brochures. A curated Coorg itinerary built around working coffee estates, misty viewpoints, and real Kodava cooking.'],
+    'Warangal':            ['See <em>Warangal</em><br>like a local.', "Beyond the textbook history. A curated Warangal itinerary built around Kakatiya-era temples, the fort's real scale, and Telangana's home cooking."],
+    'Vishakhapatnam':      ['See <em>Vizag</em><br>like a local.', "Beyond the RK Beach promenade. A curated Vizag itinerary built around the Araku hills, the port city's own beaches, and real Andhra seafood."],
+    'Pondicherry':         ['See <em>Pondicherry</em><br>like a local.', "Beyond the French Quarter selfies. A curated Pondicherry itinerary built around Auroville's quieter corners, real Franco-Tamil food, and the town's actual pace."],
+    'Ooty':                ['See <em>Ooty</em><br>like a local.', "Beyond the toy train queues. A curated Ooty itinerary built around tea estate walks, quieter viewpoints, and the hill station's real colonial-era charm."],
+    'Kodaikanal':          ['See <em>Kodaikanal</em><br>like a local.', "Beyond the lake boating queues. A curated Kodaikanal itinerary built around forest viewpoints, quieter trails, and the hill station's real pace."],
+    'Srinagar':            ['See <em>Srinagar</em><br>like a local.', 'Beyond the houseboat photo ops. A curated Srinagar itinerary built around the old city\'s real lanes, Mughal gardens, and an actual Kashmiri wazwan feast.'],
+    'Khajuraho':           ['See <em>Khajuraho</em><br>like a local.', "Beyond the headline sculptures. A curated Khajuraho itinerary built around the temple complex's real craftsmanship, quieter groups, and Bundelkhand food."],
+    'Gangtok':             ['See <em>Gangtok</em><br>like a local.', 'Beyond the MG Marg strip. A curated Gangtok itinerary built around Buddhist monasteries, high-altitude lakes, and real Sikkimese-Tibetan food.'],
+    'Guwahati':            ['See <em>Guwahati</em><br>like a local.', "Beyond the transit-stop reputation. A curated Guwahati itinerary built around river culture, Kamakhya's hilltop views, and real Assamese thalis."],
+    'Shillong':            ['See <em>Shillong</em><br>like a local.', "Beyond the 'Scotland of the East' tagline. A curated Shillong itinerary built around Khasi culture, real waterfalls, and the hill town's cafe scene."],
     'Colombo':             ['See <em>Colombo</em><br>like a local.', "Beyond the airport stopover. A curated Colombo itinerary built around kottu roti, colonial streets, and the city's underrated energy."],
     'Galle':               ['See <em>Galle</em><br>like a local.', "Inside the Fort walls and beyond. A curated Galle itinerary built around Dutch architecture, fresh crab, and the south coast's quiet beaches."],
     'Kandy':               ['See <em>Kandy</em><br>like a local.', 'Beyond the Temple of the Tooth. A curated Kandy itinerary built around Kandyan cuisine, botanical gardens, and the hill country that surrounds it.'],
@@ -716,6 +796,29 @@
     'Mumbai':              ['cool & dry (avg 24°C) — best month','warm & dry (avg 25°C) — excellent','hot & dry (avg 28°C)','very hot (avg 30°C)','very hot & humid (avg 32°C)','monsoon begins (avg 30°C) — dramatic','heavy monsoon (avg 29°C) — flooding possible','heavy monsoon (avg 29°C) — wettest','monsoon easing (avg 29°C)','post-monsoon, pleasant (avg 29°C)','cool & excellent (avg 27°C)','cool & dry (avg 25°C) — peak season'],
     'North Goa':           ['peak & perfect (avg 28°C) — dry, sunny, ideal','peak season (avg 29°C) — beautiful, busy','hot & dry (avg 31°C) — shoulder season','very hot (avg 33°C) — pre-monsoon','very hot (avg 34°C) — season ending','monsoon begins — many beach shacks close','heavy monsoon — most places shut','heavy monsoon — very quiet','monsoon ending (avg 29°C) — reopening','post-monsoon (avg 30°C) — shoulder season','season returning (avg 29°C) — great','peak season (avg 28°C) — Christmas rush'],
     'South Goa':           ['peak & peaceful (avg 28°C) — quieter than north','peak season (avg 29°C) — beautiful','hot & dry (avg 31°C) — shoulder season','very hot (avg 33°C) — pre-monsoon','very hot (avg 34°C) — avoid if possible','monsoon begins — most places shut','heavy monsoon — very limited access','heavy monsoon — very quiet','monsoon ending — slowly reopening','post-monsoon (avg 30°C) — excellent shoulder','season returning (avg 29°C)','peak season (avg 28°C) — book ahead'],
+    'Pune':                ['cool & dry (avg 21°C) — excellent','warming (avg 24°C)','warm (avg 28°C)','hot (avg 31°C)','very hot (avg 32°C)','pre-monsoon heat (avg 28°C)','monsoon (avg 25°C)','monsoon (avg 24°C)','monsoon easing (avg 25°C)','pleasant, post-monsoon (avg 26°C)','cool & pleasant (avg 24°C)','cool & dry (avg 21°C) — peak season'],
+    'Alibaug':             ['pleasant & dry (avg 24°C) — excellent','warm (avg 26°C)','warming (avg 28°C)','hot (avg 30°C)','very hot & humid (avg 31°C)','heavy monsoon begins (avg 28°C)','heaviest monsoon (avg 27°C)','heavy monsoon (avg 27°C)','monsoon easing (avg 27°C)','post-monsoon (avg 28°C)','pleasant (avg 26°C)','pleasant & dry (avg 24°C) — peak season'],
+    'Matheran':            ['cool & pleasant (avg 20°C) — excellent','warming (avg 23°C)','warm (avg 26°C)','hot (avg 29°C)','very hot (avg 30°C)','heavy monsoon begins (avg 25°C)','heaviest monsoon (avg 23°C) — waterfalls in flow','heavy monsoon (avg 23°C)','monsoon easing (avg 24°C)','post-monsoon, lush (avg 25°C)','cool & clear (avg 23°C) — excellent','cool & pleasant (avg 21°C) — peak season'],
+    'Lonavala':            ['cool & pleasant (avg 21°C) — excellent','warming (avg 24°C)','warm (avg 27°C)','hot (avg 29°C)','very hot (avg 30°C)','heavy monsoon begins (avg 25°C) — waterfalls alive','heaviest monsoon (avg 23°C) — peak waterfall season','heavy monsoon (avg 23°C)','monsoon easing (avg 24°C)','post-monsoon, lush (avg 25°C)','cool & clear (avg 23°C) — excellent','cool & pleasant (avg 21°C) — peak season'],
+    'Mahabaleshwar':       ['cool (avg 19°C) — excellent','warming (avg 21°C)','mild (avg 23°C)','warm (avg 24°C)','warm, pre-monsoon (avg 24°C)','heavy monsoon begins (avg 20°C)','heaviest monsoon (avg 19°C) — among the wettest in India','heavy monsoon (avg 19°C)','monsoon easing (avg 20°C)','post-monsoon, lush (avg 21°C)','cool & clear (avg 19°C) — excellent','cool (avg 17°C) — peak season'],
+    'Nashik':              ['cool & dry (avg 20°C) — excellent','warming (avg 23°C)','warm (avg 27°C)','hot (avg 30°C)','very hot (avg 32°C)','pre-monsoon heat (avg 28°C)','monsoon (avg 24°C)','monsoon (avg 24°C)','monsoon easing (avg 25°C)','pleasant, post-monsoon (avg 26°C)','cool & pleasant (avg 23°C)','cool & dry (avg 20°C) — peak season'],
+    'Sindhudurg':          ['pleasant & dry (avg 25°C) — excellent','warm (avg 27°C)','warming (avg 29°C)','hot (avg 30°C)','very hot & humid (avg 31°C)','heavy monsoon begins (avg 27°C)','heaviest monsoon (avg 26°C)','heavy monsoon (avg 26°C)','monsoon easing (avg 27°C)','post-monsoon (avg 28°C)','pleasant (avg 27°C)','pleasant & dry (avg 25°C) — peak season'],
+    'Jaisalmer':           ['cool & pleasant (avg 17°C) — peak season','pleasant (avg 21°C) — excellent','warming (avg 27°C)','hot (avg 33°C)','very hot (avg 38°C) — avoid','extreme heat (avg 40°C) — avoid','light monsoon, still hot (avg 36°C)','light monsoon (avg 34°C)','cooling (avg 33°C)','pleasant, season starts (avg 29°C)','cool & excellent (avg 24°C)','cold nights (avg 18°C) — peak season'],
+    'Pushkar':             ['cool (avg 16°C) — pleasant','pleasant (avg 20°C) — excellent','warm (avg 26°C)','hot (avg 32°C)','very hot (avg 36°C)','hot, pre-monsoon (avg 34°C)','monsoon (avg 30°C)','monsoon (avg 29°C)','cooling (avg 30°C)','pleasant, Camel Fair season (avg 27°C)','cool, Camel Fair peak (avg 22°C)','cold (avg 16°C) — peak season'],
+    'Alleppey':            ['pleasant & dry (avg 27°C) — excellent','warm (avg 28°C)','hot & humid (avg 29°C)','hot, pre-monsoon (avg 29°C)','very humid, monsoon approaching (avg 29°C)','heavy monsoon (avg 27°C)','heavy monsoon (avg 26°C)','monsoon continuing (avg 26°C)','monsoon easing (avg 27°C)','post-monsoon, lush (avg 27°C)','pleasant (avg 27°C) — excellent','pleasant & dry (avg 27°C) — peak season'],
+    'Varkala':             ['pleasant & dry (avg 27°C) — excellent','warm (avg 28°C)','hot (avg 29°C)','hot & humid (avg 29°C)','monsoon approaching (avg 28°C)','heavy monsoon (avg 26°C)','heavy monsoon (avg 25°C)','monsoon (avg 26°C)','monsoon easing (avg 26°C)','post-monsoon (avg 27°C)','pleasant (avg 27°C) — excellent','peak season (avg 27°C)'],
+    'Gokarna':             ['pleasant & dry (avg 27°C) — excellent','warm (avg 28°C)','hot (avg 29°C)','hot & humid (avg 30°C)','pre-monsoon humid (avg 29°C)','heavy monsoon (avg 26°C)','heavy monsoon (avg 25°C)','monsoon (avg 25°C)','monsoon easing (avg 26°C)','post-monsoon (avg 27°C)','pleasant (avg 27°C) — excellent','peak season (avg 27°C)'],
+    'Coorg':               ['cool & dry (avg 22°C) — excellent','pleasant (avg 24°C)','warming (avg 27°C)','warm, pre-monsoon (avg 27°C)','humid (avg 26°C)','heavy monsoon (avg 22°C) — dramatic but very wet','heaviest monsoon (avg 21°C)','monsoon continuing (avg 21°C)','monsoon easing (avg 23°C)','post-monsoon, lush (avg 24°C)','cool & clear (avg 23°C) — excellent','cool & misty (avg 22°C) — peak season'],
+    'Warangal':            ['cool & dry (avg 24°C) — pleasant','warming (avg 27°C)','hot (avg 32°C)','very hot (avg 36°C)','extreme heat (avg 39°C) — avoid','pre-monsoon hot (avg 33°C)','monsoon (avg 28°C)','monsoon (avg 27°C)','monsoon easing (avg 28°C)','pleasant (avg 28°C)','cool (avg 25°C) — excellent','cool & dry (avg 23°C) — peak season'],
+    'Vishakhapatnam':      ['pleasant & dry (avg 24°C) — excellent','warm (avg 26°C)','warming (avg 28°C)','hot (avg 30°C)','very hot (avg 31°C)','hot & humid, pre-monsoon (avg 30°C)','monsoon (avg 28°C)','monsoon (avg 27°C)','monsoon easing (avg 27°C)','post-monsoon (avg 27°C)','pleasant (avg 25°C)','cool & dry (avg 23°C) — peak season'],
+    'Pondicherry':         ['pleasant & dry (avg 25°C) — excellent','warming (avg 27°C)','warm (avg 29°C)','hot (avg 32°C)','very hot (avg 33°C)','hot & humid (avg 32°C)','light monsoon (avg 30°C)','light monsoon (avg 29°C)','warm (avg 29°C)','NE monsoon (avg 28°C)','heavy monsoon — can flood (avg 26°C)','pleasant (avg 24°C) — peak season'],
+    'Ooty':                ['cold (avg 12°C) — chilly, clear','cool (avg 14°C)','mild (avg 16°C)','mild & pleasant (avg 17°C)','pleasant, pre-monsoon (avg 17°C)','monsoon begins (avg 15°C)','heavy monsoon (avg 14°C)','monsoon continuing (avg 14°C)','monsoon easing (avg 15°C)','post-monsoon, lush (avg 15°C)','cool & clear (avg 13°C)','cold — peak season, can be foggy (avg 11°C)'],
+    'Kodaikanal':          ['cold (avg 13°C)','cool (avg 14°C)','mild (avg 16°C)','mild (avg 17°C)','pleasant (avg 17°C)','monsoon begins (avg 15°C)','heavy monsoon (avg 14°C)','monsoon (avg 14°C)','monsoon easing (avg 15°C)','post-monsoon (avg 15°C)','cool & clear (avg 13°C)','cold — peak season (avg 12°C)'],
+    'Srinagar':            ['very cold, snow possible (avg 2°C)','cold (avg 5°C)','mild, spring blooms (avg 11°C)','pleasant, tulip season (avg 16°C)','warm — excellent (avg 21°C)','warm — peak season (avg 24°C)','warm, light monsoon (avg 25°C)','warm (avg 25°C)','mild — excellent (avg 21°C)','cool, autumn colours (avg 15°C)','cold (avg 9°C)','very cold, snow possible (avg 4°C)'],
+    'Khajuraho':           ['cool & dry (avg 18°C) — pleasant','warming (avg 22°C)','warm (avg 28°C)','hot (avg 33°C)','very hot (avg 38°C) — avoid','extreme heat, pre-monsoon (avg 36°C)','monsoon (avg 29°C)','monsoon (avg 27°C)','monsoon easing (avg 28°C)','pleasant (avg 27°C)','cool (avg 22°C) — excellent','cold — peak season (avg 17°C)'],
+    'Gangtok':             ['cold, clear (avg 8°C)','cold (avg 9°C)','mild, spring blooms (avg 13°C)','pleasant — excellent (avg 16°C)','warm, clear views (avg 18°C)','monsoon begins (avg 19°C)','heavy monsoon — landslide risk (avg 20°C)','heavy monsoon (avg 20°C)','monsoon easing (avg 19°C)','clearest skies — excellent (avg 16°C)','cool & clear — excellent (avg 12°C)','cold, possible snow (avg 9°C)'],
+    'Guwahati':            ['cool & dry (avg 17°C) — pleasant','warming (avg 20°C)','mild (avg 24°C)','warm, pre-monsoon (avg 26°C)','humid, monsoon approaching (avg 27°C)','heavy monsoon (avg 28°C)','heavy monsoon (avg 29°C)','monsoon continuing (avg 29°C)','monsoon easing (avg 28°C)','pleasant, post-monsoon (avg 26°C)','cool — excellent (avg 21°C)','cool & dry — peak season (avg 17°C)'],
+    'Shillong':            ['cold & dry, clear (avg 12°C)','cool (avg 14°C)','mild (avg 17°C)','mild, pre-monsoon (avg 18°C)','heavy rain begins — among the wettest on Earth (avg 18°C)','extremely heavy monsoon (avg 19°C)','heaviest monsoon (avg 19°C)','heavy monsoon continuing (avg 19°C)','monsoon easing (avg 19°C)','lush & green, post-monsoon (avg 17°C)','cool & clear — excellent (avg 14°C)','cold — peak season (avg 11°C)'],
     'Colombo':             ['warm & dry (avg 29°C) — good','warm (avg 29°C) — good','hot (avg 30°C) — SW monsoon building','hot (avg 31°C)','hot & humid (avg 31°C)','SW monsoon (avg 30°C) — wet','heavy rain (avg 29°C)','heavy rain (avg 29°C)','rain easing (avg 29°C)','NE monsoon (avg 29°C) — some rain','warm & pleasant (avg 29°C)','warm & dry (avg 29°C)'],
     'Galle':               ['dry & perfect (avg 27°C) — best month','dry & excellent (avg 27°C)','warm & dry (avg 28°C)','warm (avg 29°C) — getting humid','hot & humid (avg 30°C)','SW monsoon — heavy rain','heavy rain — dramatic coast','heavy rain','rain easing','pleasant (avg 28°C) — shoulder','warm & pleasant (avg 28°C)','dry & sunny (avg 27°C) — peak season'],
     'Kandy':               ['cool & dry (avg 24°C) — good','cool & dry (avg 24°C)','warm (avg 26°C)','warm (avg 27°C)','hot (avg 28°C)','SW monsoon (avg 27°C) — hill country wet','heavy rain (avg 26°C)','heavy rain (avg 26°C) — Esala Perahera festival','rain easing (avg 26°C)','pleasant (avg 26°C)','cool & dry (avg 25°C)','cool & dry (avg 24°C) — good'],
@@ -767,6 +870,29 @@
     'Mumbai':              [{ v:'street-food', label:'Street food trails', icon:'🥘' }, { v:'dabba', label:'Dabbawala culture', icon:'🍱' }, { v:'bollywood', label:'Film & culture', icon:'🎬' }],
     'North Goa':           [{ v:'seafood', label:'Beach shack seafood', icon:'🦞' }, { v:'flea-markets', label:'Flea markets', icon:'🛍' }, { v:'feni', label:'Feni & cashew trails', icon:'🥃' }],
     'South Goa':           [{ v:'beaches', label:'Quiet beaches', icon:'🏖' }, { v:'seafood', label:'Goan fish curry', icon:'🐟' }, { v:'wildlife', label:'Wildlife sanctuary', icon:'🦊' }],
+    'Pune':                [{ v:'old-city-heritage', label:'Old city heritage', icon:'🏛' }, { v:'hill-forts', label:'Hill forts', icon:'⛰' }, { v:'misal-pav-trail', label:'Misal pav trail', icon:'🍛' }],
+    'Alibaug':             [{ v:'kolaba-fort', label:'Kolaba sea fort', icon:'🏰' }, { v:'quiet-beaches', label:'Quiet beaches', icon:'🏖' }, { v:'konkani-seafood', label:'Konkani seafood', icon:'🦐' }],
+    'Matheran':            [{ v:'vehicle-free-trails', label:'Vehicle-free trails', icon:'🥾' }, { v:'panorama-point', label:'Panorama viewpoints', icon:'🌄' }, { v:'red-path-walks', label:'Red-path walks', icon:'🚶' }],
+    'Lonavala':            [{ v:'rock-cut-caves', label:'Ancient rock-cut caves', icon:'🛕' }, { v:'monsoon-waterfalls', label:'Monsoon waterfalls', icon:'💦' }, { v:'valley-viewpoints', label:'Valley viewpoints', icon:'🌄' }],
+    'Mahabaleshwar':       [{ v:'strawberry-farms', label:'Strawberry farms', icon:'🍓' }, { v:'pratapgad-fort', label:'Pratapgad Fort trek', icon:'🏰' }, { v:'ghats-viewpoints', label:'Western Ghats views', icon:'🌄' }],
+    'Nashik':              [{ v:'vineyard-tours', label:'Vineyard tastings', icon:'🍷' }, { v:'trimbakeshwar-temple', label:'Trimbakeshwar Temple', icon:'🛕' }, { v:'godavari-ghats', label:'Godavari ghats', icon:'🌊' }],
+    'Sindhudurg':          [{ v:'sindhudurg-fort', label:'Island sea fort', icon:'🏰' }, { v:'scuba-diving', label:'Scuba diving', icon:'🤿' }, { v:'malvani-cuisine', label:'Malvani cuisine', icon:'🐟' }],
+    'Jaisalmer':           [{ v:'desert-safari', label:'Desert safari', icon:'🐪' }, { v:'havelis', label:'Havelis & fort', icon:'🏰' }, { v:'rajasthani-food', label:'Rajasthani thalis', icon:'🍛' }],
+    'Pushkar':             [{ v:'ghats', label:'Sacred ghats', icon:'🛕' }, { v:'camel-fair', label:'Camel Fair', icon:'🐪' }, { v:'vegetarian-cafes', label:'Vegetarian cafes', icon:'🥗' }],
+    'Alleppey':            [{ v:'houseboat', label:'Backwater houseboat', icon:'🛶' }, { v:'backwater-villages', label:'Village canal routes', icon:'🌴' }, { v:'toddy-shops', label:'Toddy shop meals', icon:'🍛' }],
+    'Varkala':             [{ v:'cliff-beach', label:'Cliffside beach', icon:'🏖' }, { v:'ayurveda', label:'Ayurveda & yoga', icon:'🧘' }, { v:'seafood', label:'Fresh seafood', icon:'🐟' }],
+    'Gokarna':             [{ v:'beach-hopping', label:'Beach hopping', icon:'🏖' }, { v:'temple-town', label:'Temple town', icon:'🛕' }, { v:'beach-shacks', label:'Beach shacks', icon:'🍛' }],
+    'Coorg':               [{ v:'coffee-estates', label:'Coffee estates', icon:'☕' }, { v:'waterfalls', label:'Waterfalls', icon:'💦' }, { v:'kodava-cuisine', label:'Kodava cuisine', icon:'🍖' }],
+    'Warangal':            [{ v:'kakatiya-heritage', label:'Kakatiya-era heritage', icon:'🏛' }, { v:'ramappa-temple', label:'Ramappa Temple', icon:'🛕' }, { v:'telangana-food', label:'Telangana home cooking', icon:'🍛' }],
+    'Vishakhapatnam':      [{ v:'beaches', label:'City beaches', icon:'🏖' }, { v:'araku-valley', label:'Araku Valley', icon:'⛰' }, { v:'andhra-seafood', label:'Andhra seafood', icon:'🌶' }],
+    'Pondicherry':         [{ v:'french-quarter', label:'French Quarter', icon:'🏛' }, { v:'auroville', label:'Auroville', icon:'☀' }, { v:'franco-tamil-food', label:'Franco-Tamil food', icon:'🍽' }],
+    'Ooty':                [{ v:'tea-estates', label:'Tea estate walks', icon:'🍵' }, { v:'toy-train', label:'Nilgiri toy train', icon:'🚂' }, { v:'nilgiri-viewpoints', label:'Nilgiri viewpoints', icon:'🌄' }],
+    'Kodaikanal':          [{ v:'lake-walks', label:'Star-lake walks', icon:'🚶' }, { v:'forest-viewpoints', label:'Forest viewpoints', icon:'🌲' }, { v:'homemade-chocolate', label:'Homemade chocolate', icon:'🍫' }],
+    'Srinagar':            [{ v:'dal-lake', label:'Dal Lake houseboats', icon:'🛶' }, { v:'mughal-gardens', label:'Mughal gardens', icon:'🌷' }, { v:'kashmiri-wazwan', label:'Kashmiri wazwan', icon:'🍖' }],
+    'Khajuraho':           [{ v:'temple-complex', label:'Temple complex', icon:'🛕' }, { v:'light-show', label:'Light & sound show', icon:'✨' }, { v:'bundelkhand-food', label:'Bundelkhand food', icon:'🍛' }],
+    'Gangtok':             [{ v:'monasteries', label:'Buddhist monasteries', icon:'🛕' }, { v:'tsomgo-lake', label:'Tsomgo Lake', icon:'🏔' }, { v:'sikkimese-food', label:'Sikkimese-Tibetan food', icon:'🥟' }],
+    'Guwahati':            [{ v:'kamakhya-temple', label:'Kamakhya Temple', icon:'🛕' }, { v:'brahmaputra-river', label:'Brahmaputra river', icon:'🌊' }, { v:'assamese-food', label:'Assamese thalis', icon:'🍛' }],
+    'Shillong':            [{ v:'living-root-bridges', label:'Living root bridges', icon:'🌉' }, { v:'khasi-culture', label:'Khasi culture', icon:'🎎' }, { v:'cafe-scene', label:'Cafe scene', icon:'☕' }],
     'Colombo':             [{ v:'kottu', label:'Kottu & hoppers', icon:'🍛' }, { v:'colonial', label:'Colonial architecture', icon:'🏛' }, { v:'pettah', label:'Pettah market', icon:'🛍' }],
     'Galle':               [{ v:'fort', label:'Galle Fort walk', icon:'🏰' }, { v:'seafood', label:'Fresh crab & tuna', icon:'🦀' }, { v:'beaches', label:'South coast beaches', icon:'🏖' }],
     'Kandy':               [{ v:'temple', label:'Temple of the Tooth', icon:'🛕' }, { v:'tea', label:'Ceylon tea culture', icon:'🍵' }, { v:'botanical', label:'Botanical gardens', icon:'🌺' }],
@@ -802,6 +928,29 @@
     'Mumbai':              ['Navigating the dabbawala routes…','Finding the best chaat stalls…','Mapping the local train stops…'],
     'North Goa':           ['Finding the freshest catch of the day…','Checking the Anjuna flea market day…','Sourcing the best beach shack…'],
     'South Goa':           ['Finding the quietest coves…','Sourcing the Goan fish curry recipe…','Checking the Cotigao wildlife timings…'],
+    'Pune':                ['Mapping the Peshwa-era old city…','Checking the Sinhagad Fort trek route…','Sourcing the best misal pav…'],
+    'Alibaug':             ['Checking Kolaba Fort low-tide access…','Finding Alibaug quieter beaches…','Sourcing fresh Konkani seafood…'],
+    'Matheran':            ['Checking the Matheran toy train schedule…','Mapping the quieter viewpoints…','Walking the red laterite trails…'],
+    'Lonavala':            ['Mapping the Bhaja and Karla caves…','Checking waterfall flow at Bhushi Dam…','Finding quieter valley viewpoints…'],
+    'Mahabaleshwar':       ['Checking strawberry season at the farms…','Mapping the Pratapgad Fort trek…','Finding the clearest Ghats viewpoint…'],
+    'Nashik':              ['Booking a Nashik vineyard tasting…','Checking Trimbakeshwar Temple timings…','Walking the Godavari ghats at Panchavati…'],
+    'Sindhudurg':          ['Checking the ferry to Sindhudurg Fort…','Booking a Tarkarli scuba session…','Sourcing real Malvani fish curry…'],
+    'Jaisalmer':           ['Checking desert safari timings…','Finding the best haveli views…','Sourcing authentic Rajasthani thalis…'],
+    'Pushkar':             ['Walking the 52 ghats…','Checking Camel Fair dates…','Finding the best rooftop cafe…'],
+    'Alleppey':            ['Charting the backwater canals…','Finding a village-side houseboat…','Checking toddy shop timings…'],
+    'Varkala':             ['Walking the Varkala cliff…','Booking an ayurveda session…','Finding the quietest beach stretch…'],
+    'Gokarna':             ['Hopping between Om and Kudle beaches…','Checking Mahabaleshwar Temple timings…','Sourcing the best beach shack thali…'],
+    'Coorg':               ['Walking a working coffee estate…','Checking Abbey Falls water flow…','Sourcing authentic Kodava pandi curry…'],
+    'Warangal':            ['Mapping the Kakatiya-era ruins…','Checking the Ramappa Temple carvings…','Sourcing Telangana home-style curries…'],
+    'Vishakhapatnam':      ['Checking the Araku Valley toy train…','Mapping Vizag quieter beaches…','Sourcing fiery Andhra seafood curries…'],
+    'Pondicherry':         ['Wandering the French Quarter lanes…','Checking Auroville visitor hours…','Sourcing Franco-Tamil fusion plates…'],
+    'Ooty':                ['Checking the Nilgiri toy train schedule…','Walking a working tea estate…','Finding quieter Nilgiri viewpoints…'],
+    'Kodaikanal':          ['Walking Coaker\u2019s Walk at sunrise…','Checking Pillar Rocks visibility…','Sourcing homemade Kodai chocolate…'],
+    'Srinagar':            ['Booking a sunrise shikara ride…','Checking the Mughal Gardens in bloom…','Sourcing an authentic Kashmiri wazwan…'],
+    'Khajuraho':           ['Mapping the Western temple group…','Checking the light & sound show timing…','Sourcing Bundelkhandi thalis…'],
+    'Gangtok':             ['Checking Tsomgo Lake permit status…','Mapping the quieter monasteries…','Sourcing real Sikkimese thukpa…'],
+    'Guwahati':            ['Checking the Kamakhya Temple hilltop views…','Booking a Brahmaputra sunset cruise…','Sourcing real Assamese thalis…'],
+    'Shillong':            ['Checking the living root bridge trek…','Mapping Ward Lake and the hills…','Sourcing Khasi-style smoked pork…'],
     'Colombo':             ['Finding the best kottu roti spot…','Navigating the Pettah market…','Sourcing the colonial history trail…'],
     'Galle':               ['Walking the Fort ramparts…','Finding the fresh crab suppliers…','Checking the south coast beach access…'],
     'Kandy':               ['Checking the evening puja times…','Sourcing the Ceylon tea contacts…','Mapping the botanical garden route…'],
@@ -898,32 +1047,131 @@
   }
 
   // ── Country change handler ────────────────────────────────────────────
+  // Builds the checkbox list HTML for a country's cities — grouped under
+  // state/region headers if COUNTRY_CITY_GROUPS has an entry for this
+  // country (currently just India, the only country large enough to
+  // benefit), otherwise a flat list exactly like before.
+  function buildCityCheckboxHTML(country, cities) {
+    const itemHTML = (c) => {
+      const id = 'city_' + c.replace(/[^a-zA-Z0-9]/g, '_');
+      return '<div class="city-checkbox-item" data-city="' + c.toLowerCase() + '"><input type="checkbox" id="' + id + '" value="' + c + '" onchange="onCityCheckboxChange()"><label for="' + id + '">' + c + '</label></div>';
+    };
+    const groups = COUNTRY_CITY_GROUPS[country];
+    if (!groups) return cities.map(itemHTML).join('');
+    return Object.entries(groups).map(([region, regionCities]) => {
+      const validCities = regionCities.filter(c => cities.includes(c));
+      if (!validCities.length) return '';
+      return '<div class="city-group" data-group="' + region.toLowerCase() + '"><div class="city-group-label">' + region + '</div>' + validCities.map(itemHTML).join('') + '</div>';
+    }).join('');
+  }
+
   function onCountryChange() {
     const country = document.getElementById('countrySelect').value;
     const box = document.getElementById('cityCheckboxes');
+    const trigger = document.getElementById('cityDropdownTrigger');
+    closeCityDropdown();
+    document.getElementById('citySearchInput').value = '';
 
     if (!country) {
       box.innerHTML = '<span class="city-placeholder">— choose country first —</span>';
       document.getElementById('multiCityHint').style.display = 'none';
+      trigger.disabled = true;
       resetHeader();
       refreshCityGrid();
+      updateCityDropdownLabel();
       return;
     }
 
     const cities = COUNTRY_CITIES[country] || [];
-    box.innerHTML = cities.map(c => {
-      const id = 'city_' + c.replace(/[^a-zA-Z0-9]/g, '_');
-      return '<div class="city-checkbox-item"><input type="checkbox" id="' + id + '" value="' + c + '" onchange="onCityCheckboxChange()"><label for="' + id + '">' + c + '</label></div>';
-    }).join('');
+    box.innerHTML = buildCityCheckboxHTML(country, cities);
+    trigger.disabled = false;
 
     resetHeader();
     refreshCityGrid();
+    updateCityDropdownLabel();
   }
 
   function getSelectedCities() {
     return Array.from(document.querySelectorAll('#cityCheckboxes input[type="checkbox"]:checked'))
       .map(cb => cb.value);
   }
+
+  // ── City dropdown open/close/search/label ──────────────────────
+  function toggleCityDropdown() {
+    if (!document.getElementById('countrySelect').value) return;
+    const panel = document.getElementById('cityDropdownPanel');
+    if (panel.style.display === 'none') {
+      panel.style.display = 'flex';
+      document.getElementById('cityDropdownTrigger').classList.add('open');
+      const search = document.getElementById('citySearchInput');
+      search.value = '';
+      filterCityOptions();
+      setTimeout(() => search.focus(), 0);
+    } else {
+      closeCityDropdown();
+    }
+  }
+
+  function closeCityDropdown() {
+    const panel = document.getElementById('cityDropdownPanel');
+    if (panel) panel.style.display = 'none';
+    const trigger = document.getElementById('cityDropdownTrigger');
+    if (trigger) trigger.classList.remove('open');
+  }
+
+  function filterCityOptions() {
+    const q = document.getElementById('citySearchInput').value.trim().toLowerCase();
+    const box = document.getElementById('cityCheckboxes');
+    const items = box.querySelectorAll('.city-checkbox-item');
+    let anyVisible = false;
+    items.forEach(item => {
+      const match = !q || item.dataset.city.includes(q);
+      item.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+    box.querySelectorAll('.city-group').forEach(group => {
+      const hasVisibleChild = Array.from(group.querySelectorAll('.city-checkbox-item')).some(item => item.style.display !== 'none');
+      group.style.display = hasVisibleChild ? '' : 'none';
+    });
+    let noMatchEl = box.querySelector('.city-no-match');
+    if (!anyVisible && items.length > 0) {
+      if (!noMatchEl) {
+        noMatchEl = document.createElement('div');
+        noMatchEl.className = 'city-no-match';
+        noMatchEl.textContent = 'No matching cities';
+        box.appendChild(noMatchEl);
+      }
+    } else if (noMatchEl) {
+      noMatchEl.remove();
+    }
+  }
+
+  function updateCityDropdownLabel() {
+    const label = document.getElementById('cityDropdownLabel');
+    const country = document.getElementById('countrySelect').value;
+    const selected = getSelectedCities();
+    if (!country) {
+      label.textContent = '— choose country first —';
+      label.classList.remove('has-selection');
+      return;
+    }
+    if (!selected.length) {
+      label.textContent = '— select cities —';
+      label.classList.remove('has-selection');
+      return;
+    }
+    label.textContent = selected.length <= 2 ? selected.join(', ') : (selected.slice(0, 2).join(', ') + ' +' + (selected.length - 2));
+    label.classList.add('has-selection');
+  }
+
+  // Close the panel on an outside click or Escape — standard dropdown behaviour.
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('cityDropdown');
+    if (dropdown && !dropdown.contains(e.target)) closeCityDropdown();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCityDropdown();
+  });
 
   // ── Day cap enforcement ─────────────────────────────────────────
   function enforceDaysCap() {
@@ -947,6 +1195,7 @@
     const hint = document.getElementById('multiCityHint');
     const daysInput = document.getElementById('days');
     const currentDays = parseInt(daysInput.value);
+    updateCityDropdownLabel();
 
     // Enforce max 4 cities — disable unchecked boxes once limit reached
     const allBoxes = document.querySelectorAll('#cityCheckboxes input[type="checkbox"]');
