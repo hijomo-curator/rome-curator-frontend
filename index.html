@@ -415,8 +415,8 @@
       </div>
       <div class="form-group">
         <label>Duration</label>
-        <input type="number" id="days" min="1" max="4" value="3" oninput="updateDuration(); enforceDaysCap();" />
-        <div class="duration-hint" id="durHint">4 days · 3 nights</div>
+        <input type="number" id="days" min="1" max="7" value="3" oninput="updateDuration(); enforceDaysCap();" />
+        <div class="duration-hint" id="durHint">3 days · 2 nights</div>
       </div>
       <div class="form-group">
         <label>Pace</label>
@@ -1185,7 +1185,7 @@
   }
 
   const MAX_CITIES = 4;
-  const MAX_DAYS_SINGLE = 4;
+  const MAX_DAYS_SINGLE = 7;
   const MAX_DAYS_MULTI = 10;
   const MIN_DAYS_MULTI = 6;   // 2-3 cities
   const MIN_DAYS_4_CITY = 9;  // 4 cities — 9 days / 8 nights, ~2 nights per city
