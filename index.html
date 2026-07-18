@@ -187,6 +187,32 @@
     .day-chev.open { transform: rotate(180deg); }
     .day-bd { display: none; padding: 4px 32px 22px; }
     .day-bd.open { display: block; }
+
+    /* DAY PILL NAVIGATION — one day visible at a time */
+    .day-card { display: none; }
+    .day-card.active-day { display: block; }
+    .day-nav { display: none; align-items: center; gap: 8px; padding: 14px 32px; background: var(--parchment); border-bottom: 1px solid #D4C9B8; }
+    .day-nav-arrow { flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--stone); background: white; color: var(--ink-mid); font-size: 16px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .day-nav-arrow:hover:not(:disabled) { border-color: var(--terracotta); color: var(--terracotta); }
+    .day-nav-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
+    .day-pills { flex: 1; min-width: 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .day-pills::-webkit-scrollbar { display: none; }
+    .day-pill { flex-shrink: 0; padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--parchment); background: white; color: var(--ink-mid); font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+    .day-pill:hover { border-color: var(--terra-light); }
+    .day-pill.active { background: var(--terracotta); border-color: var(--terracotta); color: white; }
+
+    /* EXPANDABLE STOP CARDS */
+    .stop-card { cursor: pointer; }
+    .stop-hd { display: flex; align-items: flex-start; gap: 9px; }
+    .stop-card .act-dot { margin-top: 8px; }
+    .stop-info { flex: 1; min-width: 0; }
+    .stop-place { display: block; font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.5; }
+    .stop-blurb { display: block; font-size: 13px; color: var(--ink-mid); font-style: italic; line-height: 1.5; }
+    .stop-chev { flex-shrink: 0; color: var(--stone); font-size: 12px; margin-top: 4px; transition: transform 0.2s; }
+    .stop-card.open .stop-chev { transform: rotate(180deg); }
+    .stop-detail { display: none; font-size: 13px; color: var(--ink-mid); line-height: 1.6; margin-top: 6px; padding-left: 14px; }
+    .stop-card.open .stop-detail { display: block; }
+
     .generating-banner { display: flex; align-items: center; gap: 10px; padding: 16px 32px; margin: 0 0 8px; background: var(--parchment); border-top: 1px solid rgba(184,92,56,0.15); font-size: 13px; color: var(--ink-mid); font-style: italic; }
     .generating-spinner { width: 13px; height: 13px; border: 2px solid rgba(184,92,56,0.25); border-top-color: var(--terracotta); border-radius: 50%; flex-shrink: 0; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -302,6 +328,8 @@
       .day-why { font-size: 11px; }
       .day-bd { padding: 4px 16px 16px; }
       .act-item { font-size: 13px; line-height: 1.6; }
+      .day-nav { padding: 12px 16px; }
+      .stop-place, .stop-blurb, .stop-detail { font-size: 12.5px; }
 
       /* Footer */
       .itin-footer { padding: 16px; flex-direction: column; align-items: stretch; gap: 12px; }
@@ -331,7 +359,7 @@
     @media print {
       .header, .form-section, .loading-state, .error-box,
       .donation-section, .email-post-section, .itin-footer, .disclaimer,
-      .generating-banner, .day-chev {
+      .generating-banner, .day-chev, .day-nav {
         display: none !important;
       }
       body.pdf-print-mode .itinerary-output {
@@ -340,6 +368,12 @@
       }
       body.pdf-print-mode .day-bd {
         display: block !important; /* belt-and-suspenders alongside the .open class the JS adds */
+      }
+      body.pdf-print-mode .day-card {
+        display: block !important; /* show every day, not just the active pill — belt-and-suspenders alongside the .active-day class the JS adds */
+      }
+      body.pdf-print-mode .stop-detail {
+        display: block !important; /* expand every stop card — belt-and-suspenders alongside the .open class the JS adds */
       }
       body.pdf-print-mode .day-hd {
         cursor: default !important;
@@ -578,6 +612,11 @@
       <p class="itin-weather" id="iWeather"></p>
     </div>
 
+    <div class="day-nav" id="dayNav">
+      <button type="button" class="day-nav-arrow" id="dayNavPrev" onclick="goToDay(activeDayIndex-1)" aria-label="Previous day">‹</button>
+      <div class="day-pills" id="dayPills"></div>
+      <button type="button" class="day-nav-arrow" id="dayNavNext" onclick="goToDay(activeDayIndex+1)" aria-label="Next day">›</button>
+    </div>
     <div class="days-wrap" id="daysWrap"></div>
     <div class="generating-banner" id="generatingBanner" style="display:none;">
       <span class="generating-spinner"></span>
@@ -1623,14 +1662,44 @@
   }
 
   // ── Build a single day card DOM element ───────────────────────
+  // Renders one stop as a tap-to-expand card: collapsed shows place + a short
+  // voice-forward blurb, tap reveals the full detail sentence. Falls back to
+  // the old plain-bullet look for itineraries generated before the blurb/
+  // detail split existed (old cached/shared itineraries store a plain string).
+  function buildStopHTML(stop) {
+    if (typeof stop === 'string') {
+      return `<li class="act-item"><span class="act-dot"></span><span>${stop}</span></li>`;
+    }
+    const place = stop.place || '';
+    const blurb = stop.blurb || '';
+    const detail = stop.detail || '';
+    return `
+      <li class="stop-card" onclick="toggleStop(this)">
+        <div class="stop-hd">
+          <span class="act-dot"></span>
+          <div class="stop-info">
+            <span class="stop-place">${place}</span>
+            <span class="stop-blurb">${blurb}</span>
+          </div>
+          <span class="stop-chev">▾</span>
+        </div>
+        <div class="stop-detail">${detail}</div>
+      </li>`;
+  }
+
+  function toggleStop(el) {
+    el.classList.toggle('open');
+  }
+
   function buildDayCard(day, i) {
     const card = document.createElement('div');
     card.className = 'day-card';
+    card.dataset.dayNum = day.day;
     const slots = [['Morning',day.morning],['Afternoon',day.afternoon],['Evening',day.evening]];
     const sHTML = slots.map(([lbl,items]) => `
       <div class="time-block">
         <div class="time-label">${lbl}</div>
-        <ul class="act-list">${(items||[]).map(it=>`<li class="act-item"><span class="act-dot"></span><span>${it}</span></li>`).join('')}</ul>
+        <ul class="act-list">${(items||[]).map(buildStopHTML).join('')}</ul>
       </div>`).join('');
     // Defensive fallbacks — a model occasionally omits a field on later chunks
     // of long generations. Better to show nothing/sensible default than the
@@ -1638,18 +1707,43 @@
     const dayTitle = day.title || `Day ${day.day}`;
     const dayWhy = day.why || '';
     card.innerHTML = `
-      <div class="day-hd" onclick="toggleDay(${i})">
+      <div class="day-hd">
         <div class="day-num">${day.day}</div>
         <div class="day-info">
           <div class="day-title">${dayTitle}</div>
           ${dayWhy ? `<div class="day-why">${dayWhy}</div>` : ''}
         </div>
-        <div class="day-chev" id="chev${i}">▾</div>
       </div>
-      <div class="day-bd" id="bd${i}">
+      <div class="day-bd open" id="bd${i}">
         ${sHTML}
       </div>`;
     return card;
+  }
+
+  // ── Day pill navigation — one day visible at a time ────────────────
+  let activeDayIndex = 0;
+
+  function renderDayPills() {
+    const wrap = document.getElementById('daysWrap');
+    const cards = [...wrap.querySelectorAll('.day-card')];
+    const nav = document.getElementById('dayNav');
+    if (cards.length <= 1) { nav.style.display = 'none'; return; }
+    nav.style.display = 'flex';
+    const pillsWrap = document.getElementById('dayPills');
+    pillsWrap.innerHTML = cards.map((c, i) => `<button type="button" class="day-pill${i===activeDayIndex?' active':''}" onclick="goToDay(${i})">Day ${c.dataset.dayNum}</button>`).join('');
+    document.getElementById('dayNavPrev').disabled = activeDayIndex === 0;
+    document.getElementById('dayNavNext').disabled = activeDayIndex === cards.length - 1;
+  }
+
+  function goToDay(i) {
+    const wrap = document.getElementById('daysWrap');
+    const cards = [...wrap.querySelectorAll('.day-card')];
+    if (i < 0 || i >= cards.length) return;
+    activeDayIndex = i;
+    cards.forEach((c, idx) => c.classList.toggle('active-day', idx === activeDayIndex));
+    renderDayPills();
+    const activePill = document.querySelector('.day-pill.active');
+    if (activePill) activePill.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
   }
 
   // ── Generating-more-days banner ─────────────────────────────────
@@ -1688,7 +1782,11 @@
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('itinOutput').style.display = 'block';
       document.getElementById('itinOutput').scrollIntoView({ behavior: 'smooth' });
-      toggleDay(0);
+      goToDay(0);
+    } else {
+      // Later chunks land while the user may already be viewing an earlier
+      // day — just add their pills without disturbing the active day.
+      renderDayPills();
     }
   }
 
@@ -1709,7 +1807,9 @@
     const alreadyRendered = wrap.querySelectorAll('.day-card').length;
     if (alreadyRendered === 0) {
       (data.days || []).forEach((day, i) => wrap.appendChild(buildDayCard(day, i)));
-      toggleDay(0);
+      goToDay(0);
+    } else {
+      renderDayPills();
     }
 
     document.getElementById('itinOutput').style.display = 'block';
@@ -1729,13 +1829,6 @@
     if (data.slug) {
       window.history.replaceState({}, '', `/itinerary/${data.slug}`);
     }
-  }
-
-  function toggleDay(i) {
-    const bd = document.getElementById('bd'+i), ch = document.getElementById('chev'+i);
-    if (!bd) return;
-    const open = bd.classList.contains('open');
-    bd.classList.toggle('open', !open); ch.classList.toggle('open', !open);
   }
 
   async function savePostEmail() {
@@ -1812,15 +1905,23 @@
     const wrap = document.getElementById('daysWrap');
     if (!wrap) return;
 
-    // Force every day open for printing, and remember which were already
-    // open so we can restore the user's actual accordion state afterward.
-    const bodies = [...wrap.querySelectorAll('.day-bd')];
-    const wasOpen = bodies.map(el => el.classList.contains('open'));
-    bodies.forEach(el => el.classList.add('open'));
+    // Force every day panel visible (not just the active pill) — restoring
+    // just means re-asserting whichever day was active before printing.
+    const dayCards = [...wrap.querySelectorAll('.day-card')];
+    dayCards.forEach(el => el.classList.add('active-day'));
+    const restoreActiveDay = activeDayIndex;
+
+    // Force every stop card expanded, and remember which were already open
+    // so we can restore the user's actual state afterward.
+    const stopCards = [...wrap.querySelectorAll('.stop-card')];
+    const stopWasOpen = stopCards.map(el => el.classList.contains('open'));
+    stopCards.forEach(el => el.classList.add('open'));
+
     document.body.classList.add('pdf-print-mode');
 
     printRestoreFn = () => {
-      bodies.forEach((el, i) => { if (!wasOpen[i]) el.classList.remove('open'); });
+      goToDay(restoreActiveDay);
+      stopCards.forEach((el, i) => { if (!stopWasOpen[i]) el.classList.remove('open'); });
       document.body.classList.remove('pdf-print-mode');
       printRestoreFn = null;
     };
