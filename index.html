@@ -205,9 +205,10 @@
     .stop-card { cursor: pointer; }
     .stop-hd { display: flex; align-items: flex-start; gap: 9px; }
     .stop-card .act-dot { margin-top: 8px; }
-    .stop-info { flex: 1; min-width: 0; }
-    .stop-place { display: block; font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.5; }
-    .stop-blurb { display: block; font-size: 13px; color: var(--ink-mid); font-style: italic; line-height: 1.5; }
+    .stop-info { flex: 1; min-width: 0; line-height: 1.5; }
+    .stop-place { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .stop-sep { font-size: 13px; color: var(--stone); }
+    .stop-blurb { font-size: 13px; color: var(--ink-mid); font-style: italic; }
     .stop-chev { flex-shrink: 0; color: var(--stone); font-size: 12px; margin-top: 4px; transition: transform 0.2s; }
     .stop-card.open .stop-chev { transform: rotate(180deg); }
     .stop-detail { display: none; font-size: 13px; color: var(--ink-mid); line-height: 1.6; margin-top: 6px; padding-left: 14px; }
@@ -1678,8 +1679,7 @@
         <div class="stop-hd">
           <span class="act-dot"></span>
           <div class="stop-info">
-            <span class="stop-place">${place}</span>
-            <span class="stop-blurb">${blurb}</span>
+            <span class="stop-place">${place}</span>${blurb ? ` <span class="stop-sep">—</span> <span class="stop-blurb">${blurb}</span>` : ''}
           </div>
           <span class="stop-chev">▾</span>
         </div>
